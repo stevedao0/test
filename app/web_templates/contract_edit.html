@@ -26,7 +26,8 @@
     </div>
   {% endif %}
 
-  <form method="post" action="/contracts/{{ year }}/{{ contract.contract_no }}/update">
+  <form method="post" action="/contracts/{{ year }}/update">
+    <input type="hidden" name="contract_no" value="{{ contract.contract_no }}">
     <div class="card-body">
       <div class="form-section" style="border-left: 4px solid var(--info-500); padding-left: var(--space-4); background: linear-gradient(90deg, var(--info-50) 0%, transparent 100%);">
         <h2 class="form-section-title" style="color: var(--info-800); display: flex; align-items: center; gap: var(--space-2);">

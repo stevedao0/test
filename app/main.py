@@ -1025,7 +1025,7 @@ def download_excel(year: int, filename: str):
     )
 
 
-@app.get("/contracts/{year}/{contract_no}/detail")
+@app.get("/contracts/{year}/detail")
 def get_contract_detail(year: int, contract_no: str):
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
     rows = read_contracts(excel_path=excel_path)
@@ -1037,7 +1037,7 @@ def get_contract_detail(year: int, contract_no: str):
             break
 
     if not contract:
-        return JSONResponse({"error": "Contract not found"}, status_code=404)
+        return JSONResponse({"error": f"Không tìm thấy hợp đồng: {contract_no}"}, status_code=404)
 
     # Get annexes for this contract
     annexes = [r for r in rows if r.get("contract_no") == contract_no and r.get("annex_no")]
@@ -1054,7 +1054,7 @@ def get_contract_detail(year: int, contract_no: str):
     })
 
 
-@app.get("/contracts/{year}/{contract_no}/edit", response_class=HTMLResponse)
+@app.get("/contracts/{year}/edit", response_class=HTMLResponse)
 def edit_contract_form(request: Request, year: int, contract_no: str):
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
     rows = read_contracts(excel_path=excel_path)
@@ -1066,7 +1066,7 @@ def edit_contract_form(request: Request, year: int, contract_no: str):
             break
 
     if not contract:
-        return RedirectResponse(url=f"/contracts?year={year}&error=Contract not found", status_code=303)
+        return RedirectResponse(url=f"/contracts?year={year}&error=Không tìm thấy hợp đồng", status_code=303)
 
     # Format date for form input
     ngay_lap = contract.get("ngay_lap_hop_dong")
@@ -1091,11 +1091,11 @@ def edit_contract_form(request: Request, year: int, contract_no: str):
     )
 
 
-@app.post("/contracts/{year}/{contract_no}/update")
+@app.post("/contracts/{year}/update")
 def update_contract(
     request: Request,
     year: int,
-    contract_no: str,
+    contract_no: str = Form(...),
     ngay_lap_hop_dong: str = Form(...),
     don_vi_ten: str = Form(""),
     don_vi_dia_chi: str = Form(""),
@@ -1163,10 +1163,11 @@ def update_contract(
             return RedirectResponse(url=f"/contracts?year={year}&error=Update failed", status_code=303)
 
     except Exception as e:
-        return RedirectResponse(url=f"/contracts/{year}/{contract_no}/edit?error={str(e)}", status_code=303)
+        from urllib.parse import quote
+        return RedirectResponse(url=f"/contracts/{year}/edit?contract_no={quote(contract_no)}&error={str(e)}", status_code=303)
 
 
-@app.post("/contracts/{year}/{contract_no}/delete")
+@app.post("/contracts/{year}/delete")
 def delete_contract(year: int, contract_no: str):
     try:
         excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
@@ -1193,7 +1194,7 @@ def delete_contract(year: int, contract_no: str):
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
-@app.post("/annexes/{year}/{contract_no}/{annex_no}/delete")
+@app.post("/annexes/{year}/delete")
 def delete_annex(year: int, contract_no: str, annex_no: str):
     try:
         excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"

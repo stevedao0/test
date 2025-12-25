@@ -249,7 +249,8 @@ function deleteAnnex(year, contractNo, annexNo) {
     return;
   }
 
-  fetch(`/annexes/${year}/${contractNo}/${annexNo}/delete`, { method: 'POST' })
+  const url = `/annexes/${year}/delete?contract_no=${encodeURIComponent(contractNo)}&annex_no=${encodeURIComponent(annexNo)}`;
+  fetch(url, { method: 'POST' })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
