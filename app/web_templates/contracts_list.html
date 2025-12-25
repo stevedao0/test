@@ -7,23 +7,56 @@
   <iframe src="{{ download2 }}" style="display:none" aria-hidden="true"></iframe>
 {% endif %}
 
-<div class="card" style="margin-bottom: var(--space-6);">
-  <div class="card-header">
-    <h2 class="card-title" style="font-size: var(--text-lg); margin-bottom: var(--space-2);">Tổng quan năm {{ year }}</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-6);">
+  <div class="card" style="border-left: 4px solid var(--primary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--primary-50) 100%);">
+    <div class="card-body" style="padding: var(--space-6);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <span class="badge badge-blue">{{ year }}</span>
+      </div>
+      <div class="stats-value" style="font-size: var(--text-3xl); color: var(--primary-700); margin-bottom: var(--space-2);">{{ stats.total_contracts }}</div>
+      <div class="stats-label" style="color: var(--text-secondary);">Tổng số hợp đồng</div>
+    </div>
   </div>
-  <div class="card-body">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-6);">
-      <div class="stats-card">
-        <div class="stats-value">{{ stats.total_contracts }}</div>
-        <div class="stats-label">Tổng số hợp đồng</div>
+
+  <div class="card" style="border-left: 4px solid var(--secondary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--secondary-50) 100%);">
+    <div class="card-body" style="padding: var(--space-6);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--secondary-500), var(--secondary-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <span class="badge badge-green">VNĐ</span>
       </div>
-      <div class="stats-card">
-        <div class="stats-value" style="color: var(--secondary-600);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
-        <div class="stats-label">Tổng giá trị (VNĐ)</div>
+      <div class="stats-value" style="font-size: var(--text-2xl); color: var(--secondary-700); margin-bottom: var(--space-2);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
+      <div class="stats-label" style="color: var(--text-secondary);">Tổng giá trị</div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--teal-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--teal-50) 100%);">
+    <div class="card-body" style="padding: var(--space-6);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--teal-500), var(--teal-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <span class="badge badge-teal">Phụ lục</span>
       </div>
-      <div class="stats-card">
-        <div class="stats-value" style="color: var(--warning-600);">{{ stats.contracts_with_annexes }}</div>
-        <div class="stats-label">HĐ có phụ lục</div>
+      <div class="stats-value" style="font-size: var(--text-3xl); color: var(--teal-700); margin-bottom: var(--space-2);">{{ stats.contracts_with_annexes }}</div>
+      <div class="stats-label" style="color: var(--text-secondary);">HĐ có phụ lục</div>
+      <div style="margin-top: var(--space-3);">
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %}; background: linear-gradient(90deg, var(--teal-500), var(--teal-400));"></div>
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1);">
+          {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %} hợp đồng có phụ lục
+        </div>
       </div>
     </div>
   </div>
@@ -66,28 +99,111 @@
       <table class="table">
         <thead>
           <tr>
-            <th data-sort="text">Số HĐ</th>
-            <th data-sort="date">Ngày</th>
-            <th data-sort="text">Đơn vị</th>
-            <th data-sort="text">Kênh</th>
-            <th data-sort="number">Số tiền</th>
-            <th>Phụ lục</th>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                </svg>
+                Số HĐ & Lĩnh vực
+              </div>
+            </th>
+            <th data-sort="date">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--info-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Ngày lập
+              </div>
+            </th>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--purple-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Đơn vị
+              </div>
+            </th>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--pink-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Kênh phát hành
+              </div>
+            </th>
+            <th data-sort="number">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--secondary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Giá trị
+              </div>
+            </th>
+            <th>
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--teal-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Phụ lục
+              </div>
+            </th>
             <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
           {% for r in rows %}
             <tr>
-              <td><strong>{{ r.contract_no }}</strong></td>
-              <td>{{ r.ngay_lap_hop_dong }}</td>
-              <td>{{ r.don_vi_ten }}</td>
-              <td>{{ r.kenh_ten }}</td>
-              <td>{% if r.so_tien_nhuan_but_text %}{{ r.so_tien_nhuan_but_text }} VNĐ{% endif %}</td>
               <td>
-                {% if r.annex_count > 0 %}
-                  <span class="badge" style="background: var(--success); color: white;">{{ r.annex_count }} PL</span>
+                <strong style="color: var(--primary-700);">{{ r.contract_no }}</strong>
+                {% if r.linh_vuc %}
+                  {% if 'MR' in r.linh_vuc %}
+                    <span class="badge badge-purple" style="margin-left: var(--space-2);">MR</span>
+                  {% elif 'PN' in r.linh_vuc %}
+                    <span class="badge badge-indigo" style="margin-left: var(--space-2);">PN</span>
+                  {% elif 'SCTT' in r.linh_vuc %}
+                    <span class="badge badge-teal" style="margin-left: var(--space-2);">SCTT</span>
+                  {% else %}
+                    <span class="badge badge-blue" style="margin-left: var(--space-2);">{{ r.linh_vuc[:4] }}</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td><span style="color: var(--text-secondary); font-size: var(--text-sm);">{{ r.ngay_lap_hop_dong }}</span></td>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: var(--space-1);">
+                  <span style="font-weight: var(--font-medium);">{{ r.don_vi_ten }}</span>
+                  {% if r.kenh_ten %}
+                    <span style="font-size: var(--text-xs); color: var(--text-tertiary);">{{ r.kenh_ten }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                {% if r.kenh_ten %}
+                  {% if 'Youtube' in r.kenh_ten or 'YouTube' in r.kenh_ten %}
+                    <span class="badge badge-red">YouTube</span>
+                  {% elif 'Facebook' in r.kenh_ten %}
+                    <span class="badge badge-blue">Facebook</span>
+                  {% elif 'TikTok' in r.kenh_ten %}
+                    <span class="badge badge-pink">TikTok</span>
+                  {% elif 'Instagram' in r.kenh_ten %}
+                    <span class="badge badge-orange">Instagram</span>
+                  {% else %}
+                    <span class="badge badge-indigo">{{ r.kenh_ten[:15] }}</span>
+                  {% endif %}
                 {% else %}
                   <span style="color: var(--text-tertiary);">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.so_tien_nhuan_but_text %}
+                  <span style="color: var(--secondary-700); font-weight: var(--font-semibold);">{{ r.so_tien_nhuan_but_text }}</span>
+                  <span style="color: var(--text-tertiary); font-size: var(--text-xs);"> VNĐ</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.annex_count > 0 %}
+                  <span class="badge badge-green">{{ r.annex_count }} PL</span>
+                {% else %}
+                  <span class="badge" style="background: var(--neutral-200); color: var(--neutral-600); border: 1px solid var(--neutral-300);">Chưa có</span>
                 {% endif %}
               </td>
               <td>

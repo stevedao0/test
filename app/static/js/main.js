@@ -1,5 +1,22 @@
+function initSidebar() {
+  const currentPath = window.location.pathname;
+  const sidebarLinks = document.querySelectorAll('.sidebar-link');
+
+  sidebarLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href && currentPath.startsWith(href) && href !== '/') {
+      link.classList.add('active');
+    } else if (href === '/' && currentPath === '/') {
+      link.classList.add('active');
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Contract Pilot - Initializing...');
+
+  initSidebar();
+  console.log('✓ Sidebar initialized');
 
   if (typeof initValidation === 'function') {
     initValidation();
