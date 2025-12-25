@@ -70,7 +70,8 @@
             </h3>
           </div>
           <div class="card-body">
-            <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <!-- Ngày lập + Số hợp đồng + Lĩnh vực (3 cột bằng nhau) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(3, 1fr);">
               <div class="form-group">
                 <label class="form-label" for="ngay_lap_hop_dong">
                   Ngày lập hợp đồng <span class="required-indicator">*</span>
@@ -145,7 +146,8 @@
                 <div class="input-error-text"></div>
               </div>
 
-              <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+              <!-- Số phụ lục + Ngày ký phụ lục + Ngày ký HĐ gốc (3 cột bằng nhau) -->
+              <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(3, 1fr);">
                 <div class="form-group">
                   <label class="form-label" for="annex_no">Số phụ lục</label>
                   <input
@@ -203,8 +205,9 @@
           </h3>
         </div>
         <div class="card-body">
-          <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
-            <div class="form-group" style="grid-column: 1 / -1;">
+          <div style="display: grid; gap: var(--space-6);">
+            <!-- Row 1: Tên đơn vị (full width) -->
+            <div class="form-group">
               <label class="form-label" for="don_vi_ten">Tên đơn vị</label>
               <input
                 id="don_vi_ten"
@@ -214,101 +217,111 @@
               />
             </div>
 
+            <!-- Row 2: Mã số thuế + Địa chỉ (2 cột: 1fr + 2fr) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 2fr;">
+              <div class="form-group">
+                <label class="form-label" for="don_vi_mst">Mã số thuế</label>
+                <input
+                  id="don_vi_mst"
+                  name="don_vi_mst"
+                  value="{{ preview.don_vi_mst or '' }}"
+                  class="form-input"
+                  placeholder="0123456789"
+                  data-validate
+                />
+                <div class="input-help-text">10-14 chữ số</div>
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_dia_chi">Địa chỉ</label>
+                <input
+                  id="don_vi_dia_chi"
+                  name="don_vi_dia_chi"
+                  value="{{ preview.don_vi_dia_chi or '' }}"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <!-- Row 3: Điện thoại + Email + Người đại diện + Chức vụ (4 cột) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(4, 1fr);">
+              <div class="form-group">
+                <label class="form-label" for="don_vi_dien_thoai">Điện thoại</label>
+                <input
+                  id="don_vi_dien_thoai"
+                  name="don_vi_dien_thoai"
+                  value="{{ preview.don_vi_dien_thoai or '' }}"
+                  class="form-input"
+                  placeholder="0901234567"
+                  data-validate
+                />
+                <div class="input-help-text">Bắt đầu bằng 0, có 10-11 số</div>
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_email">Email</label>
+                <input
+                  id="don_vi_email"
+                  name="don_vi_email"
+                  type="email"
+                  value="{{ preview.don_vi_email or '' }}"
+                  class="form-input"
+                  placeholder="example@company.com"
+                  data-validate
+                />
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_nguoi_dai_dien">Người đại diện</label>
+                <input
+                  id="don_vi_nguoi_dai_dien"
+                  name="don_vi_nguoi_dai_dien"
+                  value="{{ preview.don_vi_nguoi_dai_dien or '' }}"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_chuc_vu">Chức vụ</label>
+                <input
+                  id="don_vi_chuc_vu"
+                  name="don_vi_chuc_vu"
+                  value="{{ preview.don_vi_chuc_vu or 'Giám đốc' }}"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <!-- Row 4: Số CCCD + Ngày cấp CCCD (2 cột) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr;">
+              <div class="form-group">
+                <label class="form-label" for="so_CCCD">Số CCCD/CMND</label>
+                <input
+                  id="so_CCCD"
+                  name="so_CCCD"
+                  value="{{ preview.so_CCCD or '' }}"
+                  class="form-input"
+                  placeholder="001234567890"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="ngay_cap_CCCD">Ngày cấp CCCD</label>
+                <input
+                  id="ngay_cap_CCCD"
+                  name="ngay_cap_CCCD"
+                  value="{{ preview.ngay_cap_CCCD or '' }}"
+                  class="form-input"
+                  placeholder="01/01/2020"
+                />
+              </div>
+            </div>
+
+            <!-- Row 5: Email người thực hiện (full width) -->
             <div class="form-group">
-              <label class="form-label" for="don_vi_mst">Mã số thuế</label>
-              <input
-                id="don_vi_mst"
-                name="don_vi_mst"
-                value="{{ preview.don_vi_mst or '' }}"
-                class="form-input"
-                placeholder="0123456789"
-                data-validate
-              />
-              <div class="input-help-text">10-14 chữ số</div>
-              <div class="input-error-text"></div>
-            </div>
-
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="form-label" for="don_vi_dia_chi">Địa chỉ</label>
-              <input
-                id="don_vi_dia_chi"
-                name="don_vi_dia_chi"
-                value="{{ preview.don_vi_dia_chi or '' }}"
-                class="form-input"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="don_vi_dien_thoai">Điện thoại</label>
-              <input
-                id="don_vi_dien_thoai"
-                name="don_vi_dien_thoai"
-                value="{{ preview.don_vi_dien_thoai or '' }}"
-                class="form-input"
-                placeholder="0901234567"
-                data-validate
-              />
-              <div class="input-help-text">Bắt đầu bằng 0, có 10-11 số</div>
-              <div class="input-error-text"></div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="don_vi_email">Email</label>
-              <input
-                id="don_vi_email"
-                name="don_vi_email"
-                type="email"
-                value="{{ preview.don_vi_email or '' }}"
-                class="form-input"
-                placeholder="example@company.com"
-                data-validate
-              />
-              <div class="input-error-text"></div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="don_vi_nguoi_dai_dien">Người đại diện</label>
-              <input
-                id="don_vi_nguoi_dai_dien"
-                name="don_vi_nguoi_dai_dien"
-                value="{{ preview.don_vi_nguoi_dai_dien or '' }}"
-                class="form-input"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="don_vi_chuc_vu">Chức vụ</label>
-              <input
-                id="don_vi_chuc_vu"
-                name="don_vi_chuc_vu"
-                value="{{ preview.don_vi_chuc_vu or 'Giám đốc' }}"
-                class="form-input"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="so_CCCD">Số CCCD/CMND</label>
-              <input
-                id="so_CCCD"
-                name="so_CCCD"
-                value="{{ preview.so_CCCD or '' }}"
-                class="form-input"
-                placeholder="001234567890"
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="ngay_cap_CCCD">Ngày cấp CCCD</label>
-              <input
-                id="ngay_cap_CCCD"
-                name="ngay_cap_CCCD"
-                value="{{ preview.ngay_cap_CCCD or '' }}"
-                class="form-input"
-                placeholder="01/01/2020"
-              />
-            </div>
-
-            <div class="form-group" style="grid-column: 1 / -1;">
               <label class="form-label" for="nguoi_thuc_hien_email">Email người thực hiện</label>
               <input
                 id="nguoi_thuc_hien_email"
@@ -334,7 +347,8 @@
           </h3>
         </div>
         <div class="card-body">
-          <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+          <!-- Tên kênh + ID/Link kênh (2 cột bằng nhau) -->
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr;">
             <div class="form-group">
               <label class="form-label" for="kenh_ten">Tên kênh</label>
               <input
@@ -386,7 +400,8 @@
             </div>
           </div>
 
-          <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+          <!-- Số tiền chưa VAT + Thuế % (2 cột bằng nhau) -->
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr;">
             <div class="form-group">
               <label class="form-label" for="so_tien_chua_GTGT">Số tiền chưa VAT (VNĐ)</label>
               <div class="money-input-wrapper">
