@@ -13,17 +13,17 @@
   </div>
   <div class="card-body">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-6);">
-      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ stats.total_contracts }}</div>
-        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Tổng số hợp đồng</div>
+      <div class="stats-card">
+        <div class="stats-value">{{ stats.total_contracts }}</div>
+        <div class="stats-label">Tổng số hợp đồng</div>
       </div>
-      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
-        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Tổng giá trị (VNĐ)</div>
+      <div class="stats-card">
+        <div class="stats-value" style="color: var(--secondary-600);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
+        <div class="stats-label">Tổng giá trị (VNĐ)</div>
       </div>
-      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ stats.contracts_with_annexes }}</div>
-        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">HĐ có phụ lục</div>
+      <div class="stats-card">
+        <div class="stats-value" style="color: var(--warning-600);">{{ stats.contracts_with_annexes }}</div>
+        <div class="stats-label">HĐ có phụ lục</div>
       </div>
     </div>
   </div>

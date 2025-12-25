@@ -13,9 +13,11 @@
   line-height: var(--leading-tight);
   border-radius: var(--radius-lg);
   border: 1px solid transparent;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
   cursor: pointer;
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn:focus-visible {
@@ -36,20 +38,28 @@
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--primary-700);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .btn-primary:active:not(:disabled) {
   background-color: var(--primary-800);
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-secondary {
-  background-color: var(--neutral-100);
+  background-color: white;
   color: var(--text-primary);
   border-color: var(--border-default);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--neutral-200);
+  background-color: var(--bg-hover);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .btn-success {
@@ -123,10 +133,11 @@
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--text-primary);
-  background-color: var(--bg-card);
+  background-color: white;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-xs);
 }
 
 .form-input:hover,
@@ -139,7 +150,8 @@
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--primary-100);
+  box-shadow: 0 0 0 3px var(--primary-100), var(--shadow-sm);
+  outline: none;
 }
 
 .form-input::placeholder,
@@ -266,7 +278,7 @@
   gap: var(--space-4);
   padding: var(--space-6);
   border-bottom: 1px solid var(--border-light);
-  background-color: var(--neutral-50);
+  background: linear-gradient(to bottom, white 0%, var(--bg-secondary) 100%);
 }
 
 .search-box {
@@ -339,7 +351,7 @@
 }
 
 .data-table thead {
-  background-color: var(--neutral-50);
+  background: linear-gradient(to bottom, white 0%, var(--bg-secondary) 100%);
   border-bottom: 2px solid var(--border-default);
 }
 
@@ -397,7 +409,7 @@ th.sort-desc .sort-indicator::after {
 
 .data-table tbody tr {
   border-bottom: 1px solid var(--border-light);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-base);
 }
 
 .data-table tbody tr:last-child {
@@ -405,7 +417,9 @@ th.sort-desc .sort-indicator::after {
 }
 
 .data-table tbody tr:hover {
-  background-color: var(--bg-hover);
+  background-color: var(--bg-accent);
+  transform: scale(1.002);
+  box-shadow: var(--shadow-sm);
 }
 
 .data-table td {
@@ -431,7 +445,7 @@ th.sort-desc .sort-indicator::after {
   gap: var(--space-4);
   padding: var(--space-6);
   border-top: 1px solid var(--border-light);
-  background-color: var(--neutral-50);
+  background: linear-gradient(to top, white 0%, var(--bg-secondary) 100%);
 }
 
 .pagination-info {
@@ -831,7 +845,8 @@ th.sort-desc .sort-indicator::after {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background-color: var(--bg-card);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
 }
@@ -1054,15 +1069,20 @@ th.sort-desc .sort-indicator::after {
 .card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
 }
 
 .card-header {
   padding: var(--space-6);
   border-bottom: 1px solid var(--border-light);
-  background-color: var(--neutral-50);
+  background: linear-gradient(to bottom, white 0%, var(--bg-secondary) 100%);
 }
 
 .card-title {
@@ -1079,7 +1099,7 @@ th.sort-desc .sort-indicator::after {
 .card-footer {
   padding: var(--space-6);
   border-top: 1px solid var(--border-light);
-  background-color: var(--neutral-50);
+  background: linear-gradient(to top, white 0%, var(--bg-secondary) 100%);
 }
 
 /* =============================================================================
