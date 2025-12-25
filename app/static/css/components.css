@@ -31,61 +31,89 @@
 }
 
 .btn-primary {
-  background-color: var(--primary-600);
+  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
   color: var(--text-on-primary);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--primary-700);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--primary-700) 0%, var(--primary-800) 100%);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+  transform: translateY(-2px);
 }
 
 .btn-primary:active:not(:disabled) {
-  background-color: var(--primary-800);
+  background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-900) 100%);
   transform: translateY(0);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
 
 .btn-secondary {
-  background-color: white;
+  background: linear-gradient(135deg, white 0%, var(--neutral-50) 100%);
   color: var(--text-primary);
   border-color: var(--border-default);
   box-shadow: var(--shadow-xs);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--bg-hover);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+  border-color: var(--primary-300);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  color: var(--primary-700);
 }
 
 .btn-success {
-  background-color: var(--secondary-600);
+  background: linear-gradient(135deg, var(--secondary-500) 0%, var(--secondary-600) 100%);
   color: var(--text-on-success);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
 }
 
 .btn-success:hover:not(:disabled) {
-  background-color: var(--secondary-700);
+  background: linear-gradient(135deg, var(--secondary-600) 0%, var(--secondary-700) 100%);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.35);
+  transform: translateY(-2px);
 }
 
 .btn-danger {
-  background-color: var(--error-600);
+  background: linear-gradient(135deg, var(--error-600) 0%, var(--error-700) 100%);
   color: var(--text-on-error);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: var(--error-700);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--error-700) 0%, var(--error-800) 100%);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
+  transform: translateY(-2px);
 }
 
 .btn-danger:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.btn-info {
+  background: linear-gradient(135deg, var(--info-500) 0%, var(--info-600) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+
+.btn-info:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--info-600) 0%, var(--info-700) 100%);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, var(--warning-500) 0%, var(--warning-600) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--warning-600) 0%, var(--warning-700) 100%);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+  transform: translateY(-2px);
 }
 
 .btn-sm {
@@ -1124,17 +1152,18 @@ th.sort-desc .sort-indicator::after {
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  transition: box-shadow var(--transition-base);
+  transition: all var(--transition-base);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
 }
 
 .card-header {
   padding: var(--space-6);
   border-bottom: 1px solid var(--border-light);
-  background: linear-gradient(to bottom, white 0%, var(--bg-secondary) 100%);
+  background: linear-gradient(135deg, white 0%, var(--primary-50) 50%, var(--info-50) 100%);
 }
 
 .card-title {

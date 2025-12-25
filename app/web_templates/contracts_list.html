@@ -8,54 +8,57 @@
 {% endif %}
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-6);">
-  <div class="card" style="border-left: 4px solid var(--primary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--primary-50) 100%);">
-    <div class="card-body" style="padding: var(--space-6);">
+  <div class="card" style="border-left: 4px solid var(--primary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--primary-50) 100%); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
-        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <span class="badge badge-blue">{{ year }}</span>
+        <span class="badge badge-blue" style="font-size: var(--text-sm); padding: 6px 14px;">📅 {{ year }}</span>
       </div>
-      <div class="stats-value" style="font-size: var(--text-3xl); color: var(--primary-700); margin-bottom: var(--space-2);">{{ stats.total_contracts }}</div>
+      <div class="stats-value" style="font-size: var(--text-4xl); color: var(--primary-700); margin-bottom: var(--space-2);">{{ stats.total_contracts }}</div>
       <div class="stats-label" style="color: var(--text-secondary);">Tổng số hợp đồng</div>
     </div>
   </div>
 
-  <div class="card" style="border-left: 4px solid var(--secondary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--secondary-50) 100%);">
-    <div class="card-body" style="padding: var(--space-6);">
+  <div class="card" style="border-left: 4px solid var(--secondary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--secondary-50) 100%); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
-        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--secondary-500), var(--secondary-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--secondary-500), var(--secondary-700)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <span class="badge badge-green">VNĐ</span>
+        <span class="badge badge-green" style="font-size: var(--text-sm); padding: 6px 14px;">💰 VNĐ</span>
       </div>
-      <div class="stats-value" style="font-size: var(--text-2xl); color: var(--secondary-700); margin-bottom: var(--space-2);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
+      <div class="stats-value" style="font-size: var(--text-3xl); color: var(--secondary-700); margin-bottom: var(--space-2);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
       <div class="stats-label" style="color: var(--text-secondary);">Tổng giá trị</div>
     </div>
   </div>
 
-  <div class="card" style="border-left: 4px solid var(--teal-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--teal-50) 100%);">
-    <div class="card-body" style="padding: var(--space-6);">
+  <div class="card" style="border-left: 4px solid var(--teal-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--teal-50) 100%); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(20, 184, 166, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
-        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--teal-500), var(--teal-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--teal-500), var(--teal-700)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <span class="badge badge-teal">Phụ lục</span>
+        <span class="badge badge-teal" style="font-size: var(--text-sm); padding: 6px 14px;">📎 Phụ lục</span>
       </div>
-      <div class="stats-value" style="font-size: var(--text-3xl); color: var(--teal-700); margin-bottom: var(--space-2);">{{ stats.contracts_with_annexes }}</div>
+      <div class="stats-value" style="font-size: var(--text-4xl); color: var(--teal-700); margin-bottom: var(--space-2);">{{ stats.contracts_with_annexes }}</div>
       <div class="stats-label" style="color: var(--text-secondary);">HĐ có phụ lục</div>
-      <div style="margin-top: var(--space-3);">
-        <div class="progress-bar-container">
-          <div class="progress-bar" style="width: {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %}; background: linear-gradient(90deg, var(--teal-500), var(--teal-400));"></div>
+      <div style="margin-top: var(--space-4);">
+        <div class="progress-bar-container" style="height: 10px; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);">
+          <div class="progress-bar" style="width: {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %}; background: linear-gradient(90deg, var(--teal-400), var(--teal-600)); height: 10px;"></div>
         </div>
-        <div style="font-size: var(--text-xs); color: var(--text-tertiary); margin-top: var(--space-1);">
-          {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %} hợp đồng có phụ lục
+        <div style="font-size: var(--text-sm); color: var(--teal-700); margin-top: var(--space-2); font-weight: var(--font-semibold);">
+          {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %} có phụ lục
         </div>
       </div>
     </div>
@@ -63,35 +66,48 @@
 </div>
 
 <div class="card">
-  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4);">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4); border-left: 4px solid var(--primary-500);">
     <div>
-      <h1 class="card-title">Danh sách hợp đồng</h1>
+      <h1 class="card-title" style="color: var(--primary-800); display: flex; align-items: center; gap: var(--space-3);">
+        <svg style="width: 28px; height: 28px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Danh sách hợp đồng
+      </h1>
       <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
-        Đọc từ Excel theo năm
+        📊 Quản lý và theo dõi tất cả hợp đồng theo năm
       </p>
     </div>
-    <form style="display: flex; gap: var(--space-2);" method="get" action="/contracts">
+    <form style="display: flex; gap: var(--space-2); align-items: center;" method="get" action="/contracts">
       <div class="form-group" style="margin: 0;">
         <input
           name="year"
           value="{{ year }}"
           class="form-input"
           placeholder="Năm"
-          style="width: 120px;"
+          style="width: 120px; border: 2px solid var(--primary-300);"
         />
       </div>
-      <button class="btn btn-secondary" type="submit">Lọc</button>
+      <button class="btn btn-info" type="submit">
+        <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        Lọc
+      </button>
     </form>
   </div>
 
   <div class="card-body">
-    <div style="margin-bottom: var(--space-4);">
+    <div style="margin-bottom: var(--space-4); position: relative;">
+      <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--primary-500); pointer-events: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
       <input
         type="text"
-        placeholder="Tìm kiếm theo số HĐ, đơn vị, kênh..."
+        placeholder="🔍 Tìm kiếm theo số HĐ, đơn vị, kênh..."
         class="form-input"
         data-table-search="contracts-table"
-        style="max-width: 400px;"
+        style="max-width: 500px; padding-left: var(--space-10); border: 2px solid var(--primary-200); background: linear-gradient(135deg, white 0%, var(--primary-50) 100%);"
       />
     </div>
 
@@ -208,31 +224,31 @@
               </td>
               <td>
                 <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
-                  <button class="btn btn-sm btn-secondary" onclick="viewContract('{{ year }}', '{{ r.contract_no }}')">
+                  <button class="btn btn-sm btn-info" onclick="viewContract('{{ year }}', '{{ r.contract_no }}')" title="Xem chi tiết">
                     <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                   </button>
-                  <a href="/contracts/{{ year }}/{{ r.contract_no }}/edit" class="btn btn-sm btn-secondary">
+                  <a href="/contracts/{{ year }}/{{ r.contract_no }}/edit" class="btn btn-sm btn-warning" title="Chỉnh sửa">
                     <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                   </a>
                   {% if r.download_url %}
-                    <a href="{{ r.download_url }}" class="btn btn-sm btn-secondary">
+                    <a href="{{ r.download_url }}" class="btn btn-sm btn-success" title="Tải xuống">
                       <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </a>
                   {% endif %}
-                  <a href="/annexes/new?year={{ year }}&contract_no={{ r.contract_no }}" class="btn btn-sm btn-primary">
+                  <a href="/annexes/new?year={{ year }}&contract_no={{ r.contract_no }}" class="btn btn-sm btn-primary" title="Tạo phụ lục">
                     <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                     PL
                   </a>
-                  <button class="btn btn-sm btn-danger" onclick="deleteContract('{{ year }}', '{{ r.contract_no }}')">
+                  <button class="btn btn-sm btn-danger" onclick="deleteContract('{{ year }}', '{{ r.contract_no }}')" title="Xóa">
                     <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -258,12 +274,24 @@
     </div>
   </div>
 
-  <div class="card-footer">
+  <div class="card-footer" style="display: flex; gap: var(--space-3); justify-content: flex-start; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--primary-50) 100%);">
     <a href="/contracts/new" class="btn btn-primary">
       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
-      Tạo hợp đồng
+      Tạo hợp đồng mới
+    </a>
+    <a href="/annexes/new" class="btn btn-success">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Tạo phụ lục
+    </a>
+    <a href="/documents/new" class="btn btn-secondary">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Tạo tài liệu
     </a>
   </div>
 </div>
@@ -383,8 +411,14 @@
   display: inline-block;
   padding: 4px 12px;
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
+  transition: all var(--transition-base);
+}
+
+.badge:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
 }
 
 @keyframes fadeIn {

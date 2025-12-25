@@ -6,8 +6,8 @@
 
 .sidebar {
   width: 260px;
-  background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 100%);
-  border-right: 1px solid var(--border-light);
+  background: linear-gradient(180deg, #FFFFFF 0%, var(--primary-50) 50%, var(--info-50) 100%);
+  border-right: 2px solid var(--primary-200);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -15,7 +15,7 @@
   top: 0;
   bottom: 0;
   z-index: var(--z-sticky);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.08);
 }
 
 .sidebar-header {
@@ -75,9 +75,10 @@
 }
 
 .sidebar-link.active {
-  background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
-  color: var(--primary-700);
+  background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-200) 100%);
+  color: var(--primary-800);
   font-weight: var(--font-semibold);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 .sidebar-link.active::before {
@@ -86,10 +87,11 @@
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 24px;
-  background: var(--primary-600);
+  width: 4px;
+  height: 28px;
+  background: linear-gradient(180deg, var(--primary-500), var(--primary-700));
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
 }
 
 .sidebar-icon {
