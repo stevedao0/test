@@ -914,6 +914,93 @@ def contracts_list(request: Request, year: int | None = None, download: str | No
     )
 
 
+@app.get("/annexes", response_class=HTMLResponse)
+def annexes_list(request: Request, year: int | None = None, download: str | None = None):
+    y = year or date.today().year
+    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
+
+    rows = read_contracts(excel_path=excel_path)
+
+    # Filter: only show annexes (annex_no is not empty)
+    annexes = [r for r in rows if r.get("annex_no")]
+
+    # Get base contracts for reference
+    contracts = [r for r in rows if not r.get("annex_no")]
+    contracts_map = {r.get("contract_no"): r for r in contracts}
+
+    # Calculate statistics
+    total_annexes = len(annexes)
+    total_value = 0
+    for r in annexes:
+        val = r.get("so_tien_value", 0)
+        if val:
+            try:
+                if isinstance(val, str):
+                    val = int(val.replace(",", "").replace(".", ""))
+                total_value += int(val)
+            except (ValueError, AttributeError):
+                pass
+
+    # Find contract with most annexes
+    contract_annex_counts = {}
+    for a in annexes:
+        contract_no = a.get("contract_no")
+        if contract_no:
+            contract_annex_counts[contract_no] = contract_annex_counts.get(contract_no, 0) + 1
+
+    most_annexes_contract = None
+    most_annexes_count = 0
+    if contract_annex_counts:
+        most_annexes_contract = max(contract_annex_counts, key=contract_annex_counts.get)
+        most_annexes_count = contract_annex_counts[most_annexes_contract]
+
+    # Add download url and parent contract info
+    for r in annexes:
+        path = r.get("docx_path")
+        if isinstance(path, str) and path.strip():
+            p = Path(path)
+            if p.exists():
+                filename = p.name
+                r["download_url"] = f"/download/{y}/{filename}"
+            else:
+                r["download_url"] = None
+        else:
+            r["download_url"] = None
+
+        # Add parent contract info
+        contract_no = r.get("contract_no")
+        if contract_no in contracts_map:
+            parent = contracts_map[contract_no]
+            r["parent_contract"] = {
+                "don_vi_ten": parent.get("don_vi_ten", ""),
+                "kenh_ten": parent.get("kenh_ten", ""),
+                "ngay_lap_hop_dong": parent.get("ngay_lap_hop_dong", ""),
+            }
+        else:
+            r["parent_contract"] = None
+
+    stats = {
+        "total_annexes": total_annexes,
+        "total_value": total_value,
+        "most_annexes_contract": most_annexes_contract,
+        "most_annexes_count": most_annexes_count,
+        "unique_contracts": len(contract_annex_counts),
+    }
+
+    return templates.TemplateResponse(
+        "annexes_list.html",
+        {
+            "request": request,
+            "title": "Danh sách phụ lục",
+            "year": y,
+            "rows": annexes,
+            "stats": stats,
+            "download": download,
+            "breadcrumbs": get_breadcrumbs(request.url.path),
+        },
+    )
+
+
 @app.get("/download/{year}/{filename}")
 def download_docx(year: int, filename: str):
     path = STORAGE_DOCX_DIR / str(year) / filename
@@ -1106,8 +1193,39 @@ def delete_contract(year: int, contract_no: str):
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
-# Removed /annexes route - annexes are now merged into contracts list
-# Users can view annexes in /contracts by filtering annex_no column
+@app.post("/annexes/{year}/{contract_no}/{annex_no}/delete")
+def delete_annex(year: int, contract_no: str, annex_no: str):
+    try:
+        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
+
+        # Delete associated DOCX and Excel files
+        rows = read_contracts(excel_path=excel_path)
+        for r in rows:
+            if r.get("contract_no") == contract_no and r.get("annex_no") == annex_no:
+                # Delete DOCX
+                docx_path = r.get("docx_path")
+                if docx_path and isinstance(docx_path, str):
+                    p = Path(docx_path)
+                    if p.exists():
+                        p.unlink()
+
+                # Delete catalogue Excel if exists
+                catalogue_path = r.get("catalogue_path")
+                if catalogue_path and isinstance(catalogue_path, str):
+                    p = Path(catalogue_path)
+                    if p.exists():
+                        p.unlink()
+                break
+
+        success = delete_contract_row(excel_path=excel_path, contract_no=contract_no, annex_no=annex_no)
+
+        if success:
+            return JSONResponse({"success": True, "message": f"Đã xóa phụ lục {annex_no}"})
+        else:
+            return JSONResponse({"success": False, "error": "Không tìm thấy phụ lục"}, status_code=404)
+
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 @app.get("/annexes/new", response_class=HTMLResponse)
