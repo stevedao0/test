@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom: var(--space-8);">
+  <div class="card-header">
+    <h1 class="card-title">Tạo phụ lục</h1>
+    <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-2) 0 0 0;">
+      Chọn hợp đồng đã có để tự lấy dữ liệu, nhập số phụ lục để xuất Word.
+    </p>
+  </div>
+
+  <div class="card-body">
+    {% if error %}
+      <div class="alert alert-error">
+        <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        <div class="alert-content">
+          <div class="alert-message">{{ error }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="post" action="/annexes" data-validate-form data-loading>
+      <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr;">
+        <div class="form-group">
+          <label class="form-label" for="contract_no_select">
+            Chọn hợp đồng có sẵn (tùy chọn)
+          </label>
+          <select id="contract_no_select" class="form-input">
+            <option value="">-- Không chọn (nhập thủ công bên dưới) --</option>
+            {% for r in contracts %}
+              <option value="{{ r.contract_no }}" {% if selected_contract_no == r.contract_no %}selected{% endif %}>{{ r.contract_no }}{% if r.kenh_ten %} - {{ r.kenh_ten }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          <div class="input-help-text">Chọn hợp đồng để tự động nạp dữ liệu, hoặc bỏ qua để nhập thủ công</div>
+        </div>
+      </div>
+
+      <div style="display: grid; gap: var(--space-6); grid-template-columns: 2fr 1fr 1fr; margin-top: var(--space-6);">
+        <div class="form-group">
+          <label class="form-label" for="contract_no">
+            Số hợp đồng <span class="required-indicator">*</span>
+          </label>
+          <input
+            id="contract_no"
+            name="contract_no"
+            type="text"
+            value="{{ selected_contract_no or '' }}"
+            placeholder="0001/2025/HĐQTGAN-PN/MR"
+            class="form-input"
+            required
+            data-validate
+          />
+          <div class="input-help-text">Nhập hoặc chọn từ danh sách trên</div>
+          <div class="input-error-text"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="annex_no">Số phụ lục</label>
+          <input
+            id="annex_no"
+            name="annex_no"
+            placeholder="001"
+            class="form-input"
+          />
+          <div class="input-help-text">Bỏ trống nếu không có</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ngay_ky_phu_luc">
+            Ngày ký phụ lục <span class="required-indicator">*</span>
+          </label>
+          <input
+            id="ngay_ky_phu_luc"
+            name="ngay_ky_phu_luc"
+            type="date"
+            value="{{ preview.ngay_ky_phu_luc or today }}"
+            class="form-input"
+            required
+            data-validate
+          />
+          <div class="input-error-text"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-6);">
+        <div class="card-header">
+          <h3 style="font-size: var(--text-lg); margin: 0;">Ngày ký hợp đồng</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label" for="ngay_ky_hop_dong">
+              Ngày ký hợp đồng gốc
+            </label>
+            <input
+              id="ngay_ky_hop_dong"
+              name="ngay_ky_hop_dong"
+              type="date"
+              value="{{ preview.ngay_lap_hop_dong or '' }}"
+              class="form-input"
+            />
+            <div class="input-help-text">Tự động lấy từ hợp đồng đã chọn, hoặc nhập thủ công nếu chưa có</div>
+            <div class="input-error-text"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-6);">
+        <div class="card-header">
+          <h3 style="font-size: var(--text-lg); margin: 0;">Thông tin đơn vị (có thể sửa)</h3>
+        </div>
+        <div class="card-body">
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" for="don_vi_ten">Tên đơn vị</label>
+              <input
+                id="don_vi_ten"
+                name="don_vi_ten"
+                value="{{ preview.don_vi_ten or '' }}"
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" for="don_vi_dia_chi">Địa chỉ</label>
+              <input
+                id="don_vi_dia_chi"
+                name="don_vi_dia_chi"
+                value="{{ preview.don_vi_dia_chi or '' }}"
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="don_vi_dien_thoai">Điện thoại</label>
+              <input
+                id="don_vi_dien_thoai"
+                name="don_vi_dien_thoai"
+                value="{{ preview.don_vi_dien_thoai or '' }}"
+                class="form-input"
+                placeholder="0901234567"
+                data-validate
+              />
+              <div class="input-help-text">Bắt đầu bằng 0, có 10-11 số</div>
+              <div class="input-error-text"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="don_vi_email">Email</label>
+              <input
+                id="don_vi_email"
+                name="don_vi_email"
+                type="email"
+                value="{{ preview.don_vi_email or '' }}"
+                class="form-input"
+                placeholder="example@company.com"
+                data-validate
+              />
+              <div class="input-error-text"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="nguoi_thuc_hien_email">Email người thực hiện</label>
+              <input
+                id="nguoi_thuc_hien_email"
+                name="nguoi_thuc_hien_email"
+                type="email"
+                value="{{ preview.nguoi_thuc_hien_email or '' }}"
+                class="form-input"
+                placeholder="executor@company.com"
+              />
+              <div class="input-help-text">Email người thực hiện trong phụ lục (không bắt buộc)</div>
+              <div class="input-error-text"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="don_vi_nguoi_dai_dien">Người đại diện</label>
+              <input
+                id="don_vi_nguoi_dai_dien"
+                name="don_vi_nguoi_dai_dien"
+                value="{{ preview.don_vi_nguoi_dai_dien or '' }}"
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="don_vi_chuc_vu">Chức vụ</label>
+              <input
+                id="don_vi_chuc_vu"
+                name="don_vi_chuc_vu"
+                value="{{ preview.don_vi_chuc_vu or '' }}"
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="so_CCCD">Số CCCD/CMND</label>
+              <input
+                id="so_CCCD"
+                name="so_CCCD"
+                value="{{ preview.so_CCCD or '' }}"
+                class="form-input"
+                placeholder="001234567890"
+              />
+              <div class="input-help-text">Số Căn cước công dân hoặc Chứng minh nhân dân</div>
+              <div class="input-error-text"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ngay_cap_CCCD">Ngày cấp CCCD</label>
+              <input
+                id="ngay_cap_CCCD"
+                name="ngay_cap_CCCD"
+                value="{{ preview.ngay_cap_CCCD or '' }}"
+                class="form-input"
+                placeholder="01/01/2020"
+              />
+              <div class="input-help-text">Ngày cấp căn cước (không bắt buộc)</div>
+              <div class="input-error-text"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="don_vi_mst">Mã số thuế</label>
+              <input
+                id="don_vi_mst"
+                name="don_vi_mst"
+                value="{{ preview.don_vi_mst or '' }}"
+                class="form-input"
+                placeholder="0123456789"
+                data-validate
+              />
+              <div class="input-help-text">10-14 chữ số</div>
+              <div class="input-error-text"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="linh_vuc">Lĩnh vực</label>
+              <input
+                id="linh_vuc"
+                name="linh_vuc"
+                value="{{ preview.linh_vuc or '' }}"
+                class="form-input"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-6);">
+        <div class="card-header">
+          <h3 style="font-size: var(--text-lg); margin: 0;">
+            Thông tin kênh
+            <span style="font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; margin-left: var(--space-2);">(Tùy chọn)</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="form-group">
+              <label class="form-label" for="kenh_ten">Tên kênh</label>
+              <input
+                id="kenh_ten"
+                name="kenh_ten"
+                value="{{ preview.kenh_ten or '' }}"
+                placeholder="Ví dụ: Thanh Ngoc Official"
+                class="form-input"
+              />
+              <div class="input-help-text">Để trống nếu chưa có thông tin</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="kenh_id">ID/Link kênh</label>
+              <input
+                id="kenh_id"
+                name="kenh_id"
+                value="{{ preview.kenh_id or '' }}"
+                placeholder="UCxxxx hoặc https://youtube.com/channel/UCxxxx"
+                class="form-input"
+                data-validate
+              />
+              <div class="input-help-text">Để trống nếu chưa có thông tin</div>
+              <div class="input-error-text"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: var(--space-6);" data-money-calculator>
+        <div class="card-header">
+          <h3 style="font-size: var(--text-lg); margin: 0;">
+            Thông tin tài chính
+            <span style="font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; margin-left: var(--space-2);">(Tùy chọn)</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info" style="margin-bottom: var(--space-6); padding: var(--space-4); background: rgba(59, 130, 246, 0.05); border-left: 3px solid var(--primary); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: start; gap: var(--space-3);">
+              <svg style="width: 20px; height: 20px; color: var(--primary); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">
+                <strong style="color: var(--text-primary);">Phụ lục cho hợp đồng khung:</strong> Nếu hợp đồng gốc không có số tiền (hợp đồng khung), bạn có thể nhập số tiền cụ thể cho phụ lục này.
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="form-group">
+              <label class="form-label" for="so_tien_chua_GTGT">Số tiền chưa VAT (VNĐ)</label>
+              <div class="money-input-wrapper">
+                <input
+                  id="so_tien_chua_GTGT"
+                  name="so_tien_chua_GTGT"
+                  value="{{ preview.so_tien_chua_GTGT_text or '' }}"
+                  placeholder="15,600,000 (hoặc để trống)"
+                  class="form-input money-input"
+                  data-money-input
+                />
+                <span class="money-currency">VNĐ</span>
+              </div>
+              <div class="input-help-text">Nhập số tiền cụ thể cho phụ lục này</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="thue_percent">Thuế GTGT (%)</label>
+              <input
+                id="thue_percent"
+                name="thue_percent"
+                type="number"
+                value="10"
+                min="0"
+                max="100"
+                class="form-input"
+                data-vat-input
+              />
+              <div class="input-help-text">Mặc định 10%</div>
+            </div>
+          </div>
+
+          <div class="money-calculator-preview">
+            <div class="preview-row">
+              <span>Số tiền chưa VAT:</span>
+              <strong data-preview-pre-vat>{{ preview.so_tien_chua_GTGT_text or '0' }} VNĐ</strong>
+            </div>
+            <div class="preview-row">
+              <span>Thuế GTGT (10%):</span>
+              <strong data-preview-vat>{{ preview.thue_GTGT_text or '0' }} VNĐ</strong>
+            </div>
+            <div class="preview-row preview-total">
+              <span>Tổng cộng:</span>
+              <strong data-preview-total>{{ preview.so_tien_text or preview.so_tien_nhuan_but_text or '0' }} VNĐ</strong>
+            </div>
+            <div class="preview-row">
+              <span style="font-size: var(--text-sm);">Bằng chữ:</span>
+              <em data-preview-words style="color: var(--text-tertiary);">{{ preview.so_tien_bang_chu or 'Không đồng' }}</em>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: var(--space-8); display: flex; align-items: center; gap: var(--space-4);">
+        <button type="submit" class="btn btn-primary btn-lg" data-submit-btn>
+          <span class="btn-spinner">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"/>
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+            </svg>
+          </span>
+          <span class="btn-text">Xuất Word phụ lục + Lưu Excel</span>
+        </button>
+        <a href="/annexes" class="btn btn-secondary">Xem danh sách</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title" style="font-size: var(--text-lg);">Ghi chú</h3>
+  </div>
+  <div class="card-body">
+    <ul style="list-style: disc; padding-left: var(--space-6); font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-relaxed);">
+      <li>Phụ lục sẽ lấy dữ liệu theo hợp đồng đã chọn để hạn chế nhập lại</li>
+      <li>Số phụ lục nếu để trống sẽ bỏ hẳn trong tên file</li>
+      <li>File Word phụ lục sẽ lưu vào thư mục <code>storage/docx</code></li>
+      <li>Tất cả thông tin sẽ được validate trước khi gửi</li>
+      <li>Số tiền sẽ tự động được format và chuyển thành chữ tiếng Việt</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const contractNoSelect = document.getElementById('contract_no_select');
+    const contractNoInput = document.getElementById('contract_no');
+
+    if (!contractNoSelect || !contractNoInput) return;
+
+    contractNoSelect.addEventListener('change', function () {
+      const v = contractNoSelect.value || '';
+      if (v) {
+        contractNoInput.value = v;
+        const params = new URLSearchParams(window.location.search);
+        params.set('year', '{{ year }}');
+        params.set('contract_no', v);
+        window.location.href = '/annexes/new?' + params.toString();
+      }
+    });
+  })();
+</script>
+{% endblock %}

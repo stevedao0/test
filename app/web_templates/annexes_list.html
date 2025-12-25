@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+{% if download %}
+  <iframe src="{{ download }}" style="display:none" aria-hidden="true"></iframe>
+{% endif %}
+
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4);">
+    <div>
+      <h1 class="card-title">Danh sách phụ lục</h1>
+      <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+        Đọc từ Excel theo năm
+      </p>
+    </div>
+    <form style="display: flex; gap: var(--space-2);" method="get" action="/annexes">
+      <div class="form-group" style="margin: 0;">
+        <input
+          name="year"
+          value="{{ year }}"
+          class="form-input"
+          placeholder="Năm"
+          style="width: 120px;"
+        />
+      </div>
+      <button class="btn btn-secondary" type="submit">Lọc</button>
+    </form>
+  </div>
+
+  <div class="card-body">
+    <div style="margin-bottom: var(--space-4);">
+      <input
+        type="text"
+        placeholder="Tìm kiếm theo số HĐ, số PL..."
+        class="form-input"
+        data-table-search="annexes-table"
+        style="max-width: 400px;"
+      />
+    </div>
+
+    <div class="table-wrapper" data-enhanced-table="annexes-table">
+      <table class="table">
+        <thead>
+          <tr>
+            <th data-sort="text">Số HĐ</th>
+            <th data-sort="text">Số PL</th>
+            <th data-sort="date">Ngày tạo</th>
+            <th>Word</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td><strong>{{ r.contract_no }}</strong></td>
+              <td>{{ r.annex_no or '-' }}</td>
+              <td>{{ r.created_at }}</td>
+              <td>
+                {% if r.download_url %}
+                  <a href="{{ r.download_url }}" class="btn btn-sm btn-secondary">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Tải
+                  </a>
+                {% else %}
+                  <span style="color: var(--text-tertiary);">-</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if rows|length == 0 %}
+        <div class="empty-state">
+          <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <div class="empty-state-title">Chưa có phụ lục</div>
+          <div class="empty-state-description">Chưa có dữ liệu cho năm {{ year }}</div>
+        </div>
+      {% endif %}
+
+      <div class="table-pagination" data-pagination-for="annexes-table"></div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <a href="/annexes/new" class="btn btn-primary">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Tạo phụ lục
+    </a>
+  </div>
+</div>
+{% endblock %}
