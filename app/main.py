@@ -1025,6 +1025,18 @@ def download_excel(year: int, filename: str):
     )
 
 
+def _serialize_for_json(obj):
+    """Convert datetime objects to strings for JSON serialization"""
+    if isinstance(obj, dict):
+        return {k: _serialize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_serialize_for_json(item) for item in obj]
+    elif isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    else:
+        return obj
+
+
 @app.get("/contracts/{year}/detail")
 def get_contract_detail(year: int, contract_no: str):
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
@@ -1048,9 +1060,13 @@ def get_contract_detail(year: int, contract_no: str):
         if isinstance(val, (date, datetime)):
             contract["ngay_lap_hop_dong_display"] = val.strftime("%d/%m/%Y")
 
+    # Serialize datetime objects for JSON
+    contract_serialized = _serialize_for_json(contract)
+    annexes_serialized = _serialize_for_json(annexes)
+
     return JSONResponse({
-        "contract": contract,
-        "annexes": annexes,
+        "contract": contract_serialized,
+        "annexes": annexes_serialized,
     })
 
 
