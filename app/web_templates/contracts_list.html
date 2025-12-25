@@ -12,18 +12,18 @@
     <h2 class="card-title" style="font-size: var(--text-lg); margin-bottom: var(--space-2);">Tổng quan năm {{ year }}</h2>
   </div>
   <div class="card-body">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-6);">
-      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ stats.total_contracts }}</div>
-        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Tổng số hợp đồng</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Tổng số hợp đồng</span>
+        <span class="stat-value">{{ stats.total_contracts }}</span>
       </div>
-      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
-        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Tổng giá trị (VNĐ)</div>
+      <div class="stat-card">
+        <span class="stat-label">Tổng giá trị (VNĐ)</span>
+        <span class="stat-value">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</span>
       </div>
-      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
-        <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ stats.contracts_with_annexes }}</div>
-        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">HĐ có phụ lục</div>
+      <div class="stat-card">
+        <span class="stat-label">HĐ có phụ lục</span>
+        <span class="stat-value">{{ stats.contracts_with_annexes }}</span>
       </div>
     </div>
   </div>
@@ -85,7 +85,7 @@
               <td>{% if r.so_tien_nhuan_but_text %}{{ r.so_tien_nhuan_but_text }} VNĐ{% endif %}</td>
               <td>
                 {% if r.annex_count > 0 %}
-                  <span class="badge" style="background: var(--success); color: white;">{{ r.annex_count }} PL</span>
+                  <span class="badge badge-success">{{ r.annex_count }} PL</span>
                 {% else %}
                   <span style="color: var(--text-tertiary);">-</span>
                 {% endif %}
