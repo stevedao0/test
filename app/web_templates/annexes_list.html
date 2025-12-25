@@ -5,35 +5,48 @@
 {% endif %}
 
 <div class="card">
-  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4);">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4); border-left: 4px solid var(--teal-500);">
     <div>
-      <h1 class="card-title">Danh sách phụ lục</h1>
+      <h1 class="card-title" style="color: var(--teal-800); display: flex; align-items: center; gap: var(--space-3);">
+        <svg style="width: 28px; height: 28px; color: var(--teal-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Danh sách phụ lục
+      </h1>
       <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
-        Đọc từ Excel theo năm
+        📎 Quản lý và theo dõi tất cả phụ lục theo năm
       </p>
     </div>
-    <form style="display: flex; gap: var(--space-2);" method="get" action="/annexes">
+    <form style="display: flex; gap: var(--space-2); align-items: center;" method="get" action="/annexes">
       <div class="form-group" style="margin: 0;">
         <input
           name="year"
           value="{{ year }}"
           class="form-input"
           placeholder="Năm"
-          style="width: 120px;"
+          style="width: 120px; border: 2px solid var(--teal-300);"
         />
       </div>
-      <button class="btn btn-secondary" type="submit">Lọc</button>
+      <button class="btn btn-info" type="submit">
+        <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        Lọc
+      </button>
     </form>
   </div>
 
   <div class="card-body">
-    <div style="margin-bottom: var(--space-4);">
+    <div style="margin-bottom: var(--space-4); position: relative;">
+      <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--teal-500); pointer-events: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
       <input
         type="text"
-        placeholder="Tìm kiếm theo số HĐ, số PL..."
+        placeholder="🔍 Tìm kiếm theo số HĐ, số PL..."
         class="form-input"
         data-table-search="annexes-table"
-        style="max-width: 400px;"
+        style="max-width: 500px; padding-left: var(--space-10); border: 2px solid var(--teal-200); background: linear-gradient(135deg, white 0%, var(--teal-50) 100%);"
       />
     </div>
 
@@ -41,25 +54,52 @@
       <table class="table">
         <thead>
           <tr>
-            <th data-sort="text">Số HĐ</th>
-            <th data-sort="text">Số PL</th>
-            <th data-sort="date">Ngày tạo</th>
-            <th>Word</th>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                </svg>
+                Số hợp đồng
+              </div>
+            </th>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--teal-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Số phụ lục
+              </div>
+            </th>
+            <th data-sort="date">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--info-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Ngày tạo
+              </div>
+            </th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
           {% for r in rows %}
             <tr>
-              <td><strong>{{ r.contract_no }}</strong></td>
-              <td>{{ r.annex_no or '-' }}</td>
-              <td>{{ r.created_at }}</td>
+              <td><strong style="color: var(--primary-700);">{{ r.contract_no }}</strong></td>
+              <td>
+                {% if r.annex_no %}
+                  <span class="badge badge-teal">PL {{ r.annex_no }}</span>
+                {% else %}
+                  <span style="color: var(--text-tertiary);">-</span>
+                {% endif %}
+              </td>
+              <td><span style="color: var(--text-secondary); font-size: var(--text-sm);">{{ r.created_at }}</span></td>
               <td>
                 {% if r.download_url %}
-                  <a href="{{ r.download_url }}" class="btn btn-sm btn-secondary">
-                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <a href="{{ r.download_url }}" class="btn btn-sm btn-success" title="Tải xuống">
+                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Tải
+                    Tải xuống
                   </a>
                 {% else %}
                   <span style="color: var(--text-tertiary);">-</span>
@@ -84,12 +124,12 @@
     </div>
   </div>
 
-  <div class="card-footer">
+  <div class="card-footer" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--teal-50) 100%);">
     <a href="/annexes/new" class="btn btn-primary">
       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
-      Tạo phụ lục
+      Tạo phụ lục mới
     </a>
   </div>
 </div>
