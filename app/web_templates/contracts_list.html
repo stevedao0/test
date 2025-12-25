@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block content %}
+{% if download %}
+  <iframe src="{{ download }}" style="display:none" aria-hidden="true"></iframe>
+{% endif %}
+{% if download2 %}
+  <iframe src="{{ download2 }}" style="display:none" aria-hidden="true"></iframe>
+{% endif %}
+
+<div class="card" style="margin-bottom: var(--space-6);">
+  <div class="card-header">
+    <h2 class="card-title" style="font-size: var(--text-lg); margin-bottom: var(--space-2);">Tổng quan năm {{ year }}</h2>
+  </div>
+  <div class="card-body">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-6);">
+      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">{{ stats.total_contracts }}</div>
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Tổng số hợp đồng</div>
+      </div>
+      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 2rem; font-weight: 700; color: var(--success);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Tổng giá trị (VNĐ)</div>
+      </div>
+      <div style="text-align: center; padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-md);">
+        <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ stats.contracts_with_annexes }}</div>
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">HĐ có phụ lục</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4);">
+    <div>
+      <h1 class="card-title">Danh sách hợp đồng</h1>
+      <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+        Đọc từ Excel theo năm
+      </p>
+    </div>
+    <form style="display: flex; gap: var(--space-2);" method="get" action="/contracts">
+      <div class="form-group" style="margin: 0;">
+        <input
+          name="year"
+          value="{{ year }}"
+          class="form-input"
+          placeholder="Năm"
+          style="width: 120px;"
+        />
+      </div>
+      <button class="btn btn-secondary" type="submit">Lọc</button>
+    </form>
+  </div>
+
+  <div class="card-body">
+    <div style="margin-bottom: var(--space-4);">
+      <input
+        type="text"
+        placeholder="Tìm kiếm theo số HĐ, đơn vị, kênh..."
+        class="form-input"
+        data-table-search="contracts-table"
+        style="max-width: 400px;"
+      />
+    </div>
+
+    <div class="table-wrapper" data-enhanced-table="contracts-table">
+      <table class="table">
+        <thead>
+          <tr>
+            <th data-sort="text">Số HĐ</th>
+            <th data-sort="date">Ngày</th>
+            <th data-sort="text">Đơn vị</th>
+            <th data-sort="text">Kênh</th>
+            <th data-sort="number">Số tiền</th>
+            <th>Phụ lục</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td><strong>{{ r.contract_no }}</strong></td>
+              <td>{{ r.ngay_lap_hop_dong }}</td>
+              <td>{{ r.don_vi_ten }}</td>
+              <td>{{ r.kenh_ten }}</td>
+              <td>{% if r.so_tien_nhuan_but_text %}{{ r.so_tien_nhuan_but_text }} VNĐ{% endif %}</td>
+              <td>
+                {% if r.annex_count > 0 %}
+                  <span class="badge" style="background: var(--success); color: white;">{{ r.annex_count }} PL</span>
+                {% else %}
+                  <span style="color: var(--text-tertiary);">-</span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+                  <button class="btn btn-sm btn-secondary" onclick="viewContract('{{ year }}', '{{ r.contract_no }}')">
+                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                  <a href="/contracts/{{ year }}/{{ r.contract_no }}/edit" class="btn btn-sm btn-secondary">
+                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </a>
+                  {% if r.download_url %}
+                    <a href="{{ r.download_url }}" class="btn btn-sm btn-secondary">
+                      <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </a>
+                  {% endif %}
+                  <a href="/annexes/new?year={{ year }}&contract_no={{ r.contract_no }}" class="btn btn-sm btn-primary">
+                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    PL
+                  </a>
+                  <button class="btn btn-sm btn-danger" onclick="deleteContract('{{ year }}', '{{ r.contract_no }}')">
+                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if rows|length == 0 %}
+        <div class="empty-state">
+          <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <div class="empty-state-title">Chưa có hợp đồng</div>
+          <div class="empty-state-description">Chưa có dữ liệu cho năm {{ year }}</div>
+        </div>
+      {% endif %}
+
+      <div class="table-pagination" data-pagination-for="contracts-table"></div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <a href="/contracts/new" class="btn btn-primary">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Tạo hợp đồng
+    </a>
+  </div>
+</div>
+
+<div id="contractDetailModal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Chi tiết hợp đồng</h2>
+      <button class="modal-close" onclick="closeContractModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="contractDetailContent">
+      <div style="text-align: center; padding: var(--space-8);">
+        <div class="spinner"></div>
+        <p style="margin-top: var(--space-4); color: var(--text-secondary);">Đang tải...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+.modal-content {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2xl);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 90%;
+  animation: slideUp 0.3s;
+}
+
+.modal-header {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+.detail-item {
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.detail-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.detail-value {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.spinner {
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-danger {
+  background: var(--danger, #ef4444);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+</style>
+
+<script>
+function viewContract(year, contractNo) {
+  const modal = document.getElementById('contractDetailModal');
+  const content = document.getElementById('contractDetailContent');
+
+  modal.style.display = 'flex';
+  content.innerHTML = `
+    <div style="text-align: center; padding: var(--space-8);">
+      <div class="spinner"></div>
+      <p style="margin-top: var(--space-4); color: var(--text-secondary);">Đang tải...</p>
+    </div>
+  `;
+
+  fetch(`/contracts/${year}/${contractNo}/detail`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        content.innerHTML = `<div style="color: var(--danger); text-align: center;">${data.error}</div>`;
+        return;
+      }
+
+      const c = data.contract;
+      const annexes = data.annexes || [];
+
+      content.innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">Số hợp đồng</div>
+            <div class="detail-value">${c.contract_no || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Ngày lập</div>
+            <div class="detail-value">${c.ngay_lap_hop_dong_display || c.ngay_lap_hop_dong || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Lĩnh vực</div>
+            <div class="detail-value">${c.linh_vuc || '-'}</div>
+          </div>
+          <div class="detail-item" style="grid-column: 1 / -1;">
+            <div class="detail-label">Đơn vị</div>
+            <div class="detail-value">${c.don_vi_ten || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Địa chỉ</div>
+            <div class="detail-value">${c.don_vi_dia_chi || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Điện thoại</div>
+            <div class="detail-value">${c.don_vi_dien_thoai || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Người đại diện</div>
+            <div class="detail-value">${c.don_vi_nguoi_dai_dien || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Chức vụ</div>
+            <div class="detail-value">${c.don_vi_chuc_vu || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">MST</div>
+            <div class="detail-value">${c.don_vi_mst || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Email</div>
+            <div class="detail-value">${c.don_vi_email || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Tên kênh</div>
+            <div class="detail-value">${c.kenh_ten || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Kênh ID</div>
+            <div class="detail-value" style="font-size: var(--text-sm); word-break: break-all;">${c.kenh_id || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Số tiền chưa VAT</div>
+            <div class="detail-value">${c.so_tien_chua_GTGT_text ? c.so_tien_chua_GTGT_text + ' VNĐ' : '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Thuế VAT (${c.thue_percent || 10}%)</div>
+            <div class="detail-value">${c.thue_GTGT_text ? c.thue_GTGT_text + ' VNĐ' : '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Tổng tiền</div>
+            <div class="detail-value" style="color: var(--success); font-size: var(--text-lg);">${c.so_tien_text ? c.so_tien_text + ' VNĐ' : '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Số tiền bằng chữ</div>
+            <div class="detail-value" style="font-style: italic;">${c.so_tien_bang_chu || '-'}</div>
+          </div>
+        </div>
+
+        ${annexes.length > 0 ? `
+          <div style="margin-top: var(--space-6);">
+            <h3 style="margin-bottom: var(--space-4);">Phụ lục (${annexes.length})</h3>
+            <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+              ${annexes.map(a => `
+                <div style="padding: var(--space-3); background: var(--bg-secondary); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>Phụ lục ${a.annex_no || '?'}</strong>
+                    <span style="color: var(--text-secondary); margin-left: var(--space-2);">
+                      ${a.so_tien_text ? a.so_tien_text + ' VNĐ' : ''}
+                    </span>
+                  </div>
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">${a.ngay_lap_hop_dong || ''}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      `;
+    })
+    .catch(err => {
+      content.innerHTML = `<div style="color: var(--danger); text-align: center;">Lỗi: ${err.message}</div>`;
+    });
+}
+
+function closeContractModal() {
+  document.getElementById('contractDetailModal').style.display = 'none';
+}
+
+function deleteContract(year, contractNo) {
+  if (!confirm(`Bạn có chắc muốn xóa hợp đồng ${contractNo}?\n\nHành động này không thể hoàn tác!`)) {
+    return;
+  }
+
+  fetch(`/contracts/${year}/${contractNo}/delete`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(data.message || 'Đã xóa hợp đồng', 'success');
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        showToast(data.error || 'Xóa thất bại', 'error');
+      }
+    })
+    .catch(err => {
+      showToast('Lỗi: ' + err.message, 'error');
+    });
+}
+
+document.getElementById('contractDetailModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeContractModal();
+  }
+});
+</script>
+{% endblock %}
