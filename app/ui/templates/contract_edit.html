@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Chỉnh sửa hợp đồng - Hệ thống Quản lý Hợp đồng{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Chỉnh sửa hợp đồng</h1>
+    <p class="page-description">{{ contract.contract_no }}</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Thông tin hợp đồng</h2>
+    </div>
+
+    <div class="card-body">
+        <form method="POST" action="/contracts/{{ year }}/{{ contract.contract_no }}/update">
+            <div class="form-group">
+                <label class="form-label form-label-required" for="ngay_lap_hop_dong">Ngày lập hợp đồng</label>
+                <input type="date" class="form-input" id="ngay_lap_hop_dong" name="ngay_lap_hop_dong" value="{{ contract.ngay_lap_hop_dong }}" required>
+            </div>
+
+            <div class="divider"></div>
+
+            <h3 class="card-title" style="margin-bottom: 1.5rem;">Thông tin đơn vị</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label form-label-required" for="don_vi_ten">Tên đơn vị</label>
+                    <input type="text" class="form-input" id="don_vi_ten" name="don_vi_ten" value="{{ contract.don_vi_ten or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="don_vi_mst">Mã số thuế</label>
+                    <input type="text" class="form-input" id="don_vi_mst" name="don_vi_mst" value="{{ contract.don_vi_mst or '' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="don_vi_dia_chi">Địa chỉ</label>
+                <input type="text" class="form-input" id="don_vi_dia_chi" name="don_vi_dia_chi" value="{{ contract.don_vi_dia_chi or '' }}">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="don_vi_nguoi_dai_dien">Người đại diện</label>
+                    <input type="text" class="form-input" id="don_vi_nguoi_dai_dien" name="don_vi_nguoi_dai_dien" value="{{ contract.don_vi_nguoi_dai_dien or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="don_vi_chuc_vu">Chức vụ</label>
+                    <input type="text" class="form-input" id="don_vi_chuc_vu" name="don_vi_chuc_vu" value="{{ contract.don_vi_chuc_vu or '' }}">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="don_vi_dien_thoai">Điện thoại</label>
+                    <input type="text" class="form-input" id="don_vi_dien_thoai" name="don_vi_dien_thoai" value="{{ contract.don_vi_dien_thoai or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="don_vi_email">Email</label>
+                    <input type="email" class="form-input" id="don_vi_email" name="don_vi_email" value="{{ contract.don_vi_email or '' }}">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h3 class="card-title" style="margin-bottom: 1.5rem;">Thông tin kênh</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="kenh_ten">Tên kênh</label>
+                    <input type="text" class="form-input" id="kenh_ten" name="kenh_ten" value="{{ contract.kenh_ten or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="kenh_id">ID kênh</label>
+                    <input type="text" class="form-input" id="kenh_id" name="kenh_id" value="{{ contract.kenh_id or '' }}">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h3 class="card-title" style="margin-bottom: 1.5rem;">Thông tin thanh toán</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="so_tien_chua_GTGT">Số tiền chưa VAT</label>
+                    <input type="text" class="form-input" id="so_tien_chua_GTGT" name="so_tien_chua_GTGT" value="{{ contract.so_tien_chua_GTGT_text or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="thue_percent">Thuế GTGT (%)</label>
+                    <input type="text" class="form-input" id="thue_percent" name="thue_percent" value="{{ contract.thue_percent or '10' }}">
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Lưu thay đổi
+                </button>
+                <a href="/contracts?year={{ year }}" class="btn btn-secondary btn-lg">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Import tác phẩm - Hệ thống Quản lý Hợp đồng{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Import danh sách tác phẩm</h1>
+    <p class="page-description">Tải lên file Excel chứa danh sách tác phẩm từ mẫu danh mục</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Chọn file Excel</h2>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-info" style="margin-bottom: 2rem;">
+            <strong>Hướng dẫn:</strong>
+            <ol style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
+                <li>File Excel phải được xuất từ mẫu danh mục hợp đồng hoặc phụ lục</li>
+                <li>File phải chứa thông tin số hợp đồng và danh sách tác phẩm</li>
+                <li>Hệ thống sẽ tự động trích xuất thông tin từ file</li>
+            </ol>
+        </div>
+
+        <form method="POST" action="/works/import" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label form-label-required" for="import_file">File Excel danh mục</label>
+                <input type="file" class="form-input" id="import_file" name="import_file" accept=".xlsx,.xls" required>
+                <div class="form-help">Chọn file Excel (.xlsx hoặc .xls)</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="nguoi_thuc_hien">Người thực hiện</label>
+                <input type="text" class="form-input" id="nguoi_thuc_hien" name="nguoi_thuc_hien" placeholder="Tên người thực hiện">
+            </div>
+
+            <div class="btn-group" style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    Import dữ liệu
+                </button>
+                <a href="/contracts" class="btn btn-secondary btn-lg">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h2 class="card-title">Cấu trúc file Excel</h2>
+    </div>
+    <div class="card-body">
+        <p style="margin-bottom: 1rem;">File Excel cần có cấu trúc như sau:</p>
+
+        <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius); font-family: monospace; font-size: 0.875rem; overflow-x: auto;">
+            <strong>Thông tin hợp đồng (ở đầu file):</strong><br>
+            - HỢP ĐỒNG SỐ: [số hợp đồng] NGÀY [ngày ký]<br>
+            - hoặc: PHỤ LỤC SỐ: [số phụ lục] NGÀY [ngày ký]<br>
+            - Tên kênh YouTube: [tên kênh]<br>
+            - Link kênh: [URL]<br><br>
+
+            <strong>Bảng tác phẩm:</strong><br>
+            | STT | ID Video | Code | Tên tác phẩm | Tác giả | ... |<br>
+            | 1   | abc123   | C001 | Bài hát A   | Tác giả X | ... |<br>
+            | 2   | xyz789   | C002 | Bài hát B   | Tác giả Y | ... |<br>
+        </div>
+    </div>
+</div>
+{% endblock %}

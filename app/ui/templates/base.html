@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hệ thống Quản lý Hợp đồng{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <div class="sidebar-logo-icon">HĐ</div>
+                    <span>Quản lý HĐ</span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">Chính</div>
+                    <a href="/documents/new" class="sidebar-nav-item {% if request.url.path.startswith('/documents') %}active{% endif %}">
+                        <svg class="sidebar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <span>Tạo tài liệu</span>
+                    </a>
+                    <a href="/contracts" class="sidebar-nav-item {% if request.url.path.startswith('/contracts') %}active{% endif %}">
+                        <svg class="sidebar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>Danh sách hợp đồng</span>
+                    </a>
+                </div>
+
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">Công cụ</div>
+                    <a href="/works/import" class="sidebar-nav-item {% if request.url.path.startswith('/works') %}active{% endif %}">
+                        <svg class="sidebar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <span>Import tác phẩm</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <nav class="breadcrumb">
+                        {% if breadcrumbs %}
+                            {% for item in breadcrumbs %}
+                                <div class="breadcrumb-item">
+                                    {% if item.url %}
+                                        <a href="{{ item.url }}">{{ item.label }}</a>
+                                    {% else %}
+                                        {{ item.label }}
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+
+            <div class="page-container">
+                {% if error %}
+                <div class="alert alert-error">
+                    <strong>Lỗi:</strong> {{ error }}
+                </div>
+                {% endif %}
+
+                {% if message %}
+                <div class="alert alert-success">
+                    {{ message }}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
