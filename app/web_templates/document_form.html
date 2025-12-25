@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card" style="margin-bottom: var(--space-8);">
-  <div class="card-header">
-    <h1 class="card-title">Tạo hợp đồng / Phụ lục</h1>
+  <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--primary-50) 50%, var(--info-50) 100%); border-left: 4px solid var(--primary-500);">
+    <h1 class="card-title" style="display: flex; align-items: center; gap: var(--space-3); color: var(--primary-800);">
+      <svg style="width: 28px; height: 28px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Tạo hợp đồng / Phụ lục
+    </h1>
     <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-2) 0 0 0;">
-      Chọn loại tài liệu và nhập thông tin để xuất Word + lưu Excel
+      📝 Chọn loại tài liệu và nhập thông tin để xuất Word + lưu Excel
     </p>
   </div>
 
@@ -55,13 +60,13 @@
 
       <!-- Section: Contract fields (show when doc_type = contract) -->
       <div data-section="contract" style="{% if doc_type == 'annex' %}display: none;{% endif %}">
-        <div class="card" data-section="contract-info" style="margin-bottom: var(--space-6);">
-          <div class="card-header">
-            <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2);">
-              <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="card" data-section="contract-info" style="margin-bottom: var(--space-6); border-left: 4px solid var(--info-500);">
+          <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--info-50) 100%);">
+            <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--info-800);">
+              <svg style="width: 20px; height: 20px; color: var(--info-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
-              Thông tin hợp đồng
+              📋 Thông tin hợp đồng
             </h3>
           </div>
           <div class="card-body">
@@ -112,13 +117,13 @@
 
       <!-- Section: Annex fields (show when doc_type = annex) -->
       <div data-section="annex" style="{% if doc_type != 'annex' %}display: none;{% endif %}">
-        <div class="card" data-section="annex-info" style="margin-bottom: var(--space-6);">
-          <div class="card-header">
-            <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2);">
-              <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="card" data-section="annex-info" style="margin-bottom: var(--space-6); border-left: 4px solid var(--teal-500);">
+          <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--teal-50) 100%);">
+            <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--teal-800);">
+              <svg style="width: 20px; height: 20px; color: var(--teal-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
               </svg>
-              Thông tin phụ lục
+              📎 Thông tin phụ lục
             </h3>
           </div>
           <div class="card-body">
@@ -188,13 +193,13 @@
       </div>
 
       <!-- Common fields -->
-      <div class="card" data-section="company-info">
-        <div class="card-header">
-          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2);">
-            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="card" data-section="company-info" style="border-left: 4px solid var(--purple-500);">
+        <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--purple-50) 100%);">
+          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--purple-800);">
+            <svg style="width: 20px; height: 20px; color: var(--purple-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
             </svg>
-            Thông tin đơn vị (Bên B)
+            🏢 Thông tin đơn vị (Bên B)
           </h3>
         </div>
         <div class="card-body">
@@ -318,13 +323,13 @@
         </div>
       </div>
 
-      <div class="card" data-section="channel-info" style="margin-top: var(--space-6);">
-        <div class="card-header">
-          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2);">
-            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="card" data-section="channel-info" style="margin-top: var(--space-6); border-left: 4px solid var(--pink-500);">
+        <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--pink-50) 100%);">
+          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--pink-800);">
+            <svg style="width: 20px; height: 20px; color: var(--pink-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
             </svg>
-            Thông tin kênh
+            📺 Thông tin kênh
             <span style="font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; margin-left: var(--space-2);">(Tùy chọn)</span>
           </h3>
         </div>
@@ -359,13 +364,13 @@
         </div>
       </div>
 
-      <div class="card" data-section="finance-info" style="margin-top: var(--space-6);" data-money-calculator>
-        <div class="card-header">
-          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2);">
-            <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="card" data-section="finance-info" style="margin-top: var(--space-6); border-left: 4px solid var(--secondary-500);" data-money-calculator>
+        <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--secondary-50) 100%);">
+          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--secondary-800);">
+            <svg style="width: 20px; height: 20px; color: var(--secondary-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            Thông tin tài chính
+            💰 Thông tin tài chính
             <span style="font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; margin-left: var(--space-2);">(Tùy chọn - để trống cho hợp đồng khung)</span>
           </h3>
         </div>
@@ -451,19 +456,24 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="card-header">
-    <h3 class="card-title" style="font-size: var(--text-lg);">Ghi chú</h3>
+<div class="card" style="border-left: 4px solid var(--warning-500);">
+  <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--warning-50) 100%);">
+    <h3 class="card-title" style="font-size: var(--text-lg); display: flex; align-items: center; gap: var(--space-2); color: var(--warning-800);">
+      <svg style="width: 20px; height: 20px; color: var(--warning-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      📌 Ghi chú
+    </h3>
   </div>
   <div class="card-body">
-    <ul style="list-style: disc; padding-left: var(--space-6); font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-relaxed);">
-      <li><strong>Hợp đồng mới:</strong> Số hợp đồng đầy đủ sẽ là <code>0001/YYYY/HĐQTGAN-PN/MR</code></li>
-      <li><strong>Hợp đồng khung:</strong> Để trống số tiền nếu muốn tạo hợp đồng khung (không có giá trị cố định). Số tiền sẽ được bổ sung khi tạo phụ lục</li>
-      <li><strong>Thông tin tùy chọn:</strong> Tên kênh, ID/Link kênh, và số tiền đều có thể để trống nếu chưa có thông tin</li>
-      <li><strong>Phụ lục:</strong> Chọn hợp đồng có sẵn (kể cả hợp đồng khung), dữ liệu sẽ tự động điền. Bạn có thể nhập số tiền mới cho phụ lục</li>
-      <li>File Word xuất ra sẽ lưu vào thư mục <code>storage/docx</code></li>
-      <li>Excel sẽ lưu theo năm vào <code>storage/excel</code></li>
-      <li>Số tiền sẽ tự động được format và chuyển thành chữ tiếng Việt</li>
+    <ul style="list-style: none; padding-left: 0; font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-relaxed);">
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--primary-600);">●</span><div><strong style="color: var(--text-primary);">Hợp đồng mới:</strong> Số hợp đồng đầy đủ sẽ là <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">0001/YYYY/HĐQTGAN-PN/MR</code></div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--secondary-600);">●</span><div><strong style="color: var(--text-primary);">Hợp đồng khung:</strong> Để trống số tiền nếu muốn tạo hợp đồng khung (không có giá trị cố định). Số tiền sẽ được bổ sung khi tạo phụ lục</div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--info-600);">●</span><div><strong style="color: var(--text-primary);">Thông tin tùy chọn:</strong> Tên kênh, ID/Link kênh, và số tiền đều có thể để trống nếu chưa có thông tin</div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--teal-600);">●</span><div><strong style="color: var(--text-primary);">Phụ lục:</strong> Chọn hợp đồng có sẵn (kể cả hợp đồng khung), dữ liệu sẽ tự động điền. Bạn có thể nhập số tiền mới cho phụ lục</div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--purple-600);">●</span><div>File Word xuất ra sẽ lưu vào thư mục <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">storage/docx</code></div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--pink-600);">●</span><div>Excel sẽ lưu theo năm vào <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">storage/excel</code></div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--warning-600);">●</span><div>Số tiền sẽ tự động được format và chuyển thành chữ tiếng Việt</div></li>
     </ul>
   </div>
 </div>

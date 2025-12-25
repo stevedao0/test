@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card" style="margin-bottom: var(--space-8);">
-  <div class="card-header">
-    <h1 class="card-title">Import danh sách tác phẩm</h1>
+  <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--teal-50) 50%, var(--info-50) 100%); border-left: 4px solid var(--teal-500);">
+    <h1 class="card-title" style="display: flex; align-items: center; gap: var(--space-3); color: var(--teal-800);">
+      <svg style="width: 28px; height: 28px; color: var(--teal-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      </svg>
+      Import danh sách tác phẩm
+    </h1>
     <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-2) 0 0 0;">
-      Upload file Excel theo mẫu import danh mục Hợp đồng / Phụ lục để lưu vào file tổng theo năm.
+      📂 Upload file Excel theo mẫu import danh mục Hợp đồng / Phụ lục để lưu vào file tổng theo năm.
     </p>
   </div>
 
