@@ -331,6 +331,15 @@ async def works_import_submit(
         annex_no = meta.get("annex_no", "")
         year = _year_from_contract_no(contract_no)
 
+        # Check if uploaded filename matches an existing catalogue file
+        uploaded_filename = import_file.filename or ""
+        catalogue_dir = STORAGE_EXCEL_DIR / str(year)
+        existing_catalogue_path = None
+        if uploaded_filename and catalogue_dir.exists():
+            potential_path = catalogue_dir / uploaded_filename
+            if potential_path.exists():
+                existing_catalogue_path = potential_path
+
         id_channel = _extract_channel_id(meta.get("link_kenh", ""))
 
         header_row, start_row = _parse_import_table(ws)
@@ -427,8 +436,17 @@ async def works_import_submit(
         if not contract_no:
             raise ValueError("Không đọc được số hợp đồng trong file import")
 
+        # Append to works summary file
         out_path = STORAGE_EXCEL_DIR / f"works_contract_{year}.xlsx"
         append_works_rows(excel_path=out_path, rows=out_rows)
+
+        # If uploaded file matches existing catalogue, replace it with the updated version
+        if existing_catalogue_path:
+            existing_catalogue_path.write_bytes(data)
+            return RedirectResponse(
+                url=f"/works/import?message=Đã import {len(out_rows)} dòng vào {out_path.name} và cập nhật file danh mục {uploaded_filename}",
+                status_code=303,
+            )
 
         return RedirectResponse(
             url=f"/works/import?message=Đã import {len(out_rows)} dòng vào {out_path.name}",
