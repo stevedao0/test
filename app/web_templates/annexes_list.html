@@ -157,7 +157,16 @@
         </thead>
         <tbody>
           {% for r in rows %}
-            <tr>
+            <tr class="annex-row"
+                data-contract-no="{{ r.contract_no }}"
+                data-annex-no="{{ r.annex_no or 'Chưa có' }}"
+                data-channel="{{ r.kenh_ten or 'Chưa có' }}"
+                data-unit="{{ r.don_vi_ten or 'Chưa có' }}"
+                data-date-contract="{{ r.ngay_lap_hop_dong or 'Chưa có' }}"
+                data-date-annex="{{ r.ngay_ky_phu_luc or 'Chưa có' }}"
+                data-amount="{{ r.so_tien_nhuan_but_text or 'Chưa có' }}"
+                data-email="{{ r.don_vi_email or 'Chưa có' }}"
+                data-phone="{{ r.don_vi_dien_thoai or 'Chưa có' }}">
               <td><strong style="color: var(--primary-700);">{{ r.contract_no }}</strong></td>
               <td>
                 {% if r.annex_no %}
@@ -241,6 +250,58 @@
 .btn-danger:hover {
   background: #dc2626;
 }
+
+.annex-tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  min-width: 350px;
+  max-width: 450px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.annex-tooltip.show {
+  opacity: 1;
+}
+
+.annex-tooltip h4 {
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--text-base);
+  color: var(--teal-700);
+  border-bottom: 2px solid var(--teal-200);
+  padding-bottom: var(--space-2);
+}
+
+.annex-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: var(--text-sm);
+}
+
+.annex-tooltip-row:last-child {
+  border-bottom: none;
+}
+
+.annex-tooltip-label {
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  flex: 0 0 40%;
+}
+
+.annex-tooltip-value {
+  color: var(--text-primary);
+  flex: 1;
+  text-align: right;
+  word-break: break-word;
+}
 </style>
 
 <script>
@@ -254,15 +315,102 @@ function deleteAnnex(year, contractNo, annexNo) {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        showToast(data.message || 'Đã xóa phụ lục', 'success');
+        window.toast.success(data.message || 'Đã xóa phụ lục');
         setTimeout(() => location.reload(), 1000);
       } else {
-        showToast(data.error || 'Xóa thất bại', 'error');
+        window.toast.error(data.error || 'Xóa thất bại');
       }
     })
     .catch(err => {
-      showToast('Lỗi: ' + err.message, 'error');
+      window.toast.error('Lỗi: ' + err.message);
     });
 }
+
+// Annex Row Tooltip
+(function() {
+  const tooltip = document.createElement('div');
+  tooltip.className = 'annex-tooltip';
+  document.body.appendChild(tooltip);
+
+  let showTimeout;
+  let hideTimeout;
+
+  document.querySelectorAll('.annex-row').forEach(row => {
+    row.addEventListener('mouseenter', function(e) {
+      clearTimeout(hideTimeout);
+
+      const contractNo = this.dataset.contractNo;
+      const annexNo = this.dataset.annexNo;
+      const channel = this.dataset.channel;
+      const unit = this.dataset.unit;
+      const dateContract = this.dataset.dateContract;
+      const dateAnnex = this.dataset.dateAnnex;
+      const amount = this.dataset.amount;
+      const email = this.dataset.email;
+      const phone = this.dataset.phone;
+
+      tooltip.innerHTML = `
+        <h4>📎 ${contractNo} - Phụ lục ${annexNo}</h4>
+        <div class="annex-tooltip-row">
+          <span class="annex-tooltip-label">Kênh:</span>
+          <span class="annex-tooltip-value">${channel}</span>
+        </div>
+        <div class="annex-tooltip-row">
+          <span class="annex-tooltip-label">Đơn vị:</span>
+          <span class="annex-tooltip-value">${unit}</span>
+        </div>
+        <div class="annex-tooltip-row">
+          <span class="annex-tooltip-label">Email:</span>
+          <span class="annex-tooltip-value">${email}</span>
+        </div>
+        <div class="annex-tooltip-row">
+          <span class="annex-tooltip-label">Điện thoại:</span>
+          <span class="annex-tooltip-value">${phone}</span>
+        </div>
+        <div class="annex-tooltip-row">
+          <span class="annex-tooltip-label">Ngày ký HĐ:</span>
+          <span class="annex-tooltip-value">${dateContract}</span>
+        </div>
+        <div class="annex-tooltip-row">
+          <span class="annex-tooltip-label">Ngày ký PL:</span>
+          <span class="annex-tooltip-value">${dateAnnex}</span>
+        </div>
+        <div class="annex-tooltip-row">
+          <span class="annex-tooltip-label">Nhuận bút:</span>
+          <span class="annex-tooltip-value" style="color: var(--success-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
+        </div>
+      `;
+
+      showTimeout = setTimeout(() => {
+        const rect = this.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        let left = rect.right + 10;
+        let top = rect.top + window.scrollY;
+
+        // Check if tooltip goes off-screen to the right
+        if (left + tooltipRect.width > window.innerWidth) {
+          left = rect.left - tooltipRect.width - 10;
+        }
+
+        // Check if tooltip goes off-screen at bottom
+        if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
+          top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
+        }
+
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        tooltip.classList.add('show');
+      }, 300);
+    });
+
+    row.addEventListener('mouseleave', function() {
+      clearTimeout(showTimeout);
+      hideTimeout = setTimeout(() => {
+        tooltip.classList.remove('show');
+      }, 100);
+    });
+  });
+})();
 </script>
 {% endblock %}
