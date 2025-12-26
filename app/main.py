@@ -27,13 +27,18 @@ from app.config import (
 from app.documents.naming import build_docx_filename
 from app.models import ContractCreate, ContractRecord
 from app.services.docx_renderer import date_parts, render_contract_docx
-from app.services.excel_store import (
-    append_contract_row,
-    append_works_rows,
-    delete_contract_row,
-    export_catalogue_excel,
-    read_contracts,
-    update_contract_row,
+from app.services.excel_store import export_catalogue_excel
+from app.services.database import ContractDB, AnnexDB, WorksDB
+from app.services.contract_helpers import (
+    get_contracts_by_year,
+    create_contract_record,
+    create_annex_record,
+    get_contract_by_no,
+    update_contract_record,
+    delete_contract_record,
+    delete_annex_record,
+    save_works_batch,
+    format_date_for_display,
 )
 from app.services.auth import (
     get_current_user,
@@ -896,11 +901,7 @@ async def create_contract(
 @app.get("/api/contracts")
 def api_contracts_list(year: int | None = None, q: str | None = None):
     y = year or date.today().year
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
-    rows = read_contracts(excel_path=excel_path)
-
-    # Filter: only show contracts (annex_no is empty)
-    contracts = [r for r in rows if not r.get("annex_no")]
+    contracts, _ = get_contracts_by_year(y)
 
     # Apply search filter if provided
     if q:
@@ -931,12 +932,7 @@ async def contracts_list(request: Request, year: int | None = None, download: st
         return RedirectResponse(url="/auth/login", status_code=303)
 
     y = year or date.today().year
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
-
-    rows = read_contracts(excel_path=excel_path)
-
-    # Filter: only show contracts (annex_no is empty)
-    contracts = [r for r in rows if not r.get("annex_no")]
+    contracts, annexes = get_contracts_by_year(y)
 
     # Calculate statistics
     total_contracts = len(contracts)
@@ -953,8 +949,7 @@ async def contracts_list(request: Request, year: int | None = None, download: st
 
     # Count contracts with annexes
     all_contract_nos = {r.get("contract_no") for r in contracts}
-    annexes = [r for r in rows if r.get("annex_no")]
-    contracts_with_annexes = len({r.get("contract_no") for r in annexes if r.get("contract_no") in all_contract_nos})
+    contracts_with_annexes = len({a.get("contract_no") for a in annexes if a.get("contract_no") in all_contract_nos})
 
     # Add download url and annex count
     for r in contracts:
