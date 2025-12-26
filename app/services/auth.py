@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from enum import Enum
 
 from fastapi import Request, HTTPException, status
-from gotrue.errors import AuthApiError
 
 from app.core.supabase import get_supabase
 
@@ -46,7 +45,7 @@ async def signup_user(email: str, password: str, full_name: str = "") -> dict:
                 "email": response.user.email,
             }
         return {"success": False, "error": "Signup failed"}
-    except AuthApiError as e:
+    except Exception as e:
         return {"success": False, "error": str(e)}
 
 
@@ -66,7 +65,7 @@ async def login_user(email: str, password: str) -> dict:
                 "refresh_token": response.session.refresh_token,
             }
         return {"success": False, "error": "Login failed"}
-    except AuthApiError as e:
+    except Exception as e:
         error_msg = str(e)
         if "Invalid login credentials" in error_msg:
             return {"success": False, "error": "Email hoac mat khau khong dung"}
