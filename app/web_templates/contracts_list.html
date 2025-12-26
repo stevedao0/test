@@ -232,7 +232,7 @@
               </td>
               <td>
                 <div class="actions-dropdown">
-                  <button class="btn btn-sm btn-secondary dropdown-toggle" onclick="toggleDropdown(this)" title="Thao tác">
+                  <button class="btn btn-sm btn-secondary dropdown-toggle" onclick="toggleDropdown(this, event)" title="Thao tác">
                     <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                     </svg>
@@ -854,20 +854,25 @@ document.getElementById('savedFilesModal').addEventListener('click', function(e)
 });
 
 // Dropdown Menu
-function toggleDropdown(button) {
+function toggleDropdown(button, e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
   const dropdown = button.closest('.actions-dropdown');
   const menu = dropdown.querySelector('.dropdown-menu');
+  const isCurrentlyOpen = menu.classList.contains('show');
 
-  // Close all other dropdowns
+  // Close all dropdowns first
   document.querySelectorAll('.dropdown-menu.show').forEach(m => {
-    if (m !== menu) m.classList.remove('show');
+    m.classList.remove('show');
   });
 
-  // Toggle current dropdown
-  menu.classList.toggle('show');
-
-  // Stop propagation to prevent immediate close
-  event.stopPropagation();
+  // Toggle current dropdown (open if it was closed)
+  if (!isCurrentlyOpen) {
+    menu.classList.add('show');
+  }
 }
 
 // Close dropdowns when clicking outside
@@ -879,7 +884,7 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Contract Row Tooltip
+// Contract Row Tooltip - Using event delegation for dynamic content
 (function() {
   const tooltip = document.createElement('div');
   tooltip.className = 'contract-tooltip';
@@ -887,87 +892,96 @@ document.addEventListener('click', function(e) {
 
   let showTimeout;
   let hideTimeout;
+  let currentRow = null;
 
-  document.querySelectorAll('.contract-row').forEach(row => {
-    row.addEventListener('mouseenter', function(e) {
-      clearTimeout(hideTimeout);
+  // Use event delegation on tbody
+  document.addEventListener('mouseenter', function(e) {
+    const row = e.target.closest('.contract-row');
+    if (!row) return;
 
-      const contractNo = this.dataset.contractNo;
-      const channel = this.dataset.channel;
-      const unit = this.dataset.unit;
-      const date = this.dataset.date;
-      const amount = this.dataset.amount;
-      const email = this.dataset.email;
-      const phone = this.dataset.phone;
-      const representative = this.dataset.representative;
+    currentRow = row;
+    clearTimeout(hideTimeout);
 
-      tooltip.innerHTML = `
-        <h4>📋 ${contractNo}</h4>
-        <div class="contract-tooltip-row">
-          <span class="contract-tooltip-label">Kênh:</span>
-          <span class="contract-tooltip-value">${channel}</span>
-        </div>
-        <div class="contract-tooltip-row">
-          <span class="contract-tooltip-label">Đơn vị:</span>
-          <span class="contract-tooltip-value">${unit}</span>
-        </div>
-        <div class="contract-tooltip-row">
-          <span class="contract-tooltip-label">Người đại diện:</span>
-          <span class="contract-tooltip-value">${representative}</span>
-        </div>
-        <div class="contract-tooltip-row">
-          <span class="contract-tooltip-label">Email:</span>
-          <span class="contract-tooltip-value">${email}</span>
-        </div>
-        <div class="contract-tooltip-row">
-          <span class="contract-tooltip-label">Điện thoại:</span>
-          <span class="contract-tooltip-value">${phone}</span>
-        </div>
-        <div class="contract-tooltip-row">
-          <span class="contract-tooltip-label">Ngày ký:</span>
-          <span class="contract-tooltip-value">${date}</span>
-        </div>
-        <div class="contract-tooltip-row">
-          <span class="contract-tooltip-label">Nhuận bút:</span>
-          <span class="contract-tooltip-value" style="color: var(--success-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
-        </div>
-      `;
+    const contractNo = row.dataset.contractNo;
+    const channel = row.dataset.channel;
+    const unit = row.dataset.unit;
+    const date = row.dataset.date;
+    const amount = row.dataset.amount;
+    const email = row.dataset.email;
+    const phone = row.dataset.phone;
+    const representative = row.dataset.representative;
 
-      showTimeout = setTimeout(() => {
-        const rect = this.getBoundingClientRect();
-        const tooltipRect = tooltip.getBoundingClientRect();
+    tooltip.innerHTML = `
+      <h4>📋 ${contractNo}</h4>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Kênh:</span>
+        <span class="contract-tooltip-value">${channel}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Đơn vị:</span>
+        <span class="contract-tooltip-value">${unit}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Người đại diện:</span>
+        <span class="contract-tooltip-value">${representative}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Email:</span>
+        <span class="contract-tooltip-value">${email}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Điện thoại:</span>
+        <span class="contract-tooltip-value">${phone}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Ngày ký:</span>
+        <span class="contract-tooltip-value">${date}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Nhuận bút:</span>
+        <span class="contract-tooltip-value" style="color: var(--success-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
+      </div>
+    `;
 
-        let left = rect.right + 10;
-        let top = rect.top + window.scrollY;
+    showTimeout = setTimeout(() => {
+      const rect = row.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
 
-        // Check if tooltip goes off-screen to the right
-        if (left + tooltipRect.width > window.innerWidth) {
-          left = rect.left - tooltipRect.width - 10;
-        }
+      let left = rect.right + 10;
+      let top = rect.top + window.scrollY;
 
-        // Check if tooltip goes off-screen at bottom
-        if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
-          top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
-        }
+      // Check if tooltip goes off-screen to the right
+      if (left + tooltipRect.width > window.innerWidth) {
+        left = rect.left - tooltipRect.width - 10;
+      }
 
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
-        tooltip.classList.add('show');
-      }, 300);
-    });
+      // Check if tooltip goes off-screen at bottom
+      if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
+        top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
+      }
 
-    row.addEventListener('mouseleave', function() {
-      clearTimeout(showTimeout);
-      hideTimeout = setTimeout(() => {
-        tooltip.classList.remove('show');
-      }, 100);
-    });
-  });
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+      tooltip.classList.add('show');
+    }, 300);
+  }, true);
+
+  document.addEventListener('mouseleave', function(e) {
+    const row = e.target.closest('.contract-row');
+    if (!row || row !== currentRow) return;
+
+    clearTimeout(showTimeout);
+    hideTimeout = setTimeout(() => {
+      tooltip.classList.remove('show');
+    }, 100);
+  }, true);
 })();
 
 // Initialize Enhanced Tables for search and pagination
-if (typeof initEnhancedTables === 'function') {
-  initEnhancedTables();
-}
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof initEnhancedTables === 'function') {
+    initEnhancedTables();
+  }
+});
 </script>
 {% endblock %}
