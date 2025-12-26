@@ -213,6 +213,7 @@
   --z-sticky: 1100;
   --z-modal-backdrop: 1200;
   --z-modal: 1300;
+  --z-tooltip: 1350;
   --z-toast: 1400;
 
   /* Container Max Widths */

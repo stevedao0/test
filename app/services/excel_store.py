@@ -11,6 +11,9 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from app.models import ContractRecord
+from app.services.backup import BackupManager
+
+backup_manager = BackupManager(storage_dir=Path("storage/excel"))
 
 
 HEADERS = [
@@ -165,6 +168,9 @@ def _ensure_works_workbook(path: Path) -> None:
 
 def append_works_rows(*, excel_path: Path, rows: list[dict]) -> None:
     _ensure_works_workbook(excel_path)
+
+    backup_manager.create_auto_backup(excel_path)
+
     wb = load_workbook(str(excel_path))
     ws = wb["Works"]
 
@@ -260,6 +266,8 @@ def _ensure_workbook(path: Path) -> None:
 def append_contract_row(*, excel_path: Path, record: ContractRecord) -> None:
     _ensure_workbook(excel_path)
 
+    backup_manager.create_auto_backup(excel_path)
+
     wb = load_workbook(str(excel_path))
     ws = wb["Contracts"]
 
@@ -324,6 +332,8 @@ def update_contract_row(*, excel_path: Path, contract_no: str, annex_no: str | N
     if not excel_path.exists():
         return False
 
+    backup_manager.create_auto_backup(excel_path)
+
     wb = load_workbook(str(excel_path))
     ws = wb["Contracts"]
 
@@ -377,6 +387,8 @@ def update_contract_row(*, excel_path: Path, contract_no: str, annex_no: str | N
 def delete_contract_row(*, excel_path: Path, contract_no: str, annex_no: str | None = None) -> bool:
     if not excel_path.exists():
         return False
+
+    backup_manager.create_auto_backup(excel_path)
 
     wb = load_workbook(str(excel_path))
     ws = wb["Contracts"]
