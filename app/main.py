@@ -1692,3 +1692,82 @@ def create_document_unified(
         )
     else:
         return RedirectResponse(url="/documents/new?error=Invalid document type", status_code=303)
+
+
+@app.get("/storage/excel/download/{year}")
+def download_contracts_excel(year: int):
+    excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
+    if not excel_path.exists():
+        return JSONResponse({"error": "File không tồn tại"}, status_code=404)
+    return FileResponse(
+        path=excel_path,
+        filename=f"contracts_{year}.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@app.get("/storage/excel/works/download/{year}")
+def download_works_excel(year: int):
+    excel_path = STORAGE_EXCEL_DIR / f"works_contract_{year}.xlsx"
+    if not excel_path.exists():
+        return JSONResponse({"error": "File không tồn tại"}, status_code=404)
+    return FileResponse(
+        path=excel_path,
+        filename=f"works_contract_{year}.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@app.get("/storage/files/{year}")
+def list_saved_files(year: int):
+    year_dir_docx = STORAGE_DOCX_DIR / str(year)
+    year_dir_excel = STORAGE_EXCEL_DIR / str(year)
+
+    files = []
+
+    if year_dir_docx.exists():
+        for f in year_dir_docx.glob("*.docx"):
+            files.append({
+                "name": f.name,
+                "type": "docx",
+                "size": f.stat().st_size,
+                "modified": datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
+                "url": f"/storage/docx/{year}/{f.name}"
+            })
+
+    if year_dir_excel.exists():
+        for f in year_dir_excel.glob("*.xlsx"):
+            files.append({
+                "name": f.name,
+                "type": "xlsx",
+                "size": f.stat().st_size,
+                "modified": datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
+                "url": f"/storage/excel/{year}/{f.name}"
+            })
+
+    files.sort(key=lambda x: x["modified"], reverse=True)
+    return JSONResponse(files)
+
+
+@app.get("/storage/docx/{year}/{filename}")
+def download_docx_file(year: int, filename: str):
+    file_path = STORAGE_DOCX_DIR / str(year) / filename
+    if not file_path.exists():
+        return JSONResponse({"error": "File không tồn tại"}, status_code=404)
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+
+@app.get("/storage/excel/{year}/{filename}")
+def download_excel_file(year: int, filename: str):
+    file_path = STORAGE_EXCEL_DIR / str(year) / filename
+    if not file_path.exists():
+        return JSONResponse({"error": "File không tồn tại"}, status_code=404)
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )

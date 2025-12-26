@@ -108,8 +108,8 @@
       />
     </div>
 
-    <div class="table-wrapper" data-enhanced-table="annexes-table">
-      <table class="table">
+    <div class="table-wrapper data-table-container" data-enhanced-table="annexes-table">
+      <table class="table" data-sortable-table>
         <thead>
           <tr>
             <th data-sort="text">
@@ -155,7 +155,7 @@
             <th>Thao tác</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody data-table-body>
           {% for r in rows %}
             <tr class="annex-row"
                 data-contract-no="{{ r.contract_no }}"
@@ -197,19 +197,29 @@
                 {% endif %}
               </td>
               <td>
-                <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
-                  {% if r.download_url %}
-                    <a href="{{ r.download_url }}" class="btn btn-sm btn-success" title="Tải xuống">
-                      <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </a>
-                  {% endif %}
-                  <button class="btn btn-sm btn-danger" onclick="deleteAnnex('{{ year }}', '{{ r.contract_no }}', '{{ r.annex_no }}')" title="Xóa phụ lục">
-                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <div class="actions-dropdown">
+                  <button class="btn btn-sm btn-secondary dropdown-toggle" onclick="toggleDropdown(this)" title="Thao tác">
+                    <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                     </svg>
                   </button>
+                  <div class="dropdown-menu">
+                    {% if r.download_url %}
+                      <a class="dropdown-item" href="{{ r.download_url }}">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Tải xuống phụ lục
+                      </a>
+                      <div class="dropdown-divider"></div>
+                    {% endif %}
+                    <button class="dropdown-item dropdown-item-danger" onclick="deleteAnnex('{{ year }}', '{{ r.contract_no }}', '{{ r.annex_no }}')">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Xóa phụ lục
+                    </button>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -231,12 +241,18 @@
     </div>
   </div>
 
-  <div class="card-footer" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--teal-50) 100%);">
+  <div class="card-footer" style="display: flex; gap: var(--space-3); justify-content: space-between; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--teal-50) 100%);">
     <a href="/annexes/new" class="btn btn-primary">
       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       Tạo phụ lục mới
+    </a>
+    <a href="/storage/excel/works/download/{{ year }}" class="btn btn-info">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Tải file danh mục tác phẩm
     </a>
   </div>
 </div>
@@ -302,6 +318,74 @@
   text-align: right;
   word-break: break-word;
 }
+
+.actions-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: var(--space-2);
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.dropdown-item:hover {
+  background: var(--gray-50);
+}
+
+.dropdown-item .icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.dropdown-item-danger {
+  color: var(--danger);
+}
+
+.dropdown-item-danger:hover {
+  background: var(--danger-50);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--gray-200);
+  margin: var(--space-1) 0;
+}
 </style>
 
 <script>
@@ -325,6 +409,32 @@ function deleteAnnex(year, contractNo, annexNo) {
       window.toast.error('Lỗi: ' + err.message);
     });
 }
+
+// Dropdown Menu
+function toggleDropdown(button) {
+  const dropdown = button.closest('.actions-dropdown');
+  const menu = dropdown.querySelector('.dropdown-menu');
+
+  // Close all other dropdowns
+  document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+    if (m !== menu) m.classList.remove('show');
+  });
+
+  // Toggle current dropdown
+  menu.classList.toggle('show');
+
+  // Stop propagation to prevent immediate close
+  event.stopPropagation();
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.actions-dropdown')) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+      m.classList.remove('show');
+    });
+  }
+});
 
 // Annex Row Tooltip
 (function() {
@@ -412,5 +522,10 @@ function deleteAnnex(year, contractNo, annexNo) {
     });
   });
 })();
+
+// Initialize Enhanced Tables for search and pagination
+if (typeof initEnhancedTables === 'function') {
+  initEnhancedTables();
+}
 </script>
 {% endblock %}

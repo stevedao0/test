@@ -111,8 +111,8 @@
       />
     </div>
 
-    <div class="table-wrapper" data-enhanced-table="contracts-table">
-      <table class="table">
+    <div class="table-wrapper data-table-container" data-enhanced-table="contracts-table">
+      <table class="table" data-sortable-table>
         <thead>
           <tr>
             <th data-sort="text">
@@ -166,7 +166,7 @@
             <th>Thao tác</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody data-table-body>
           {% for r in rows %}
             <tr class="contract-row"
                 data-contract-no="{{ r.contract_no }}"
@@ -231,36 +231,49 @@
                 {% endif %}
               </td>
               <td>
-                <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
-                  <button class="btn btn-sm btn-info" onclick="viewContract('{{ year }}', '{{ r.contract_no }}')" title="Xem chi tiết">
-                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <div class="actions-dropdown">
+                  <button class="btn btn-sm btn-secondary dropdown-toggle" onclick="toggleDropdown(this)" title="Thao tác">
+                    <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                     </svg>
                   </button>
-                  <a href="/contracts/{{ year }}/edit?contract_no={{ r.contract_no|urlencode }}" class="btn btn-sm btn-warning" title="Chỉnh sửa">
-                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </a>
-                  {% if r.download_url %}
-                    <a href="{{ r.download_url }}" class="btn btn-sm btn-success" title="Tải xuống">
-                      <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <div class="dropdown-menu">
+                    <button class="dropdown-item" onclick="viewContract('{{ year }}', '{{ r.contract_no }}')">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
+                      Xem chi tiết
+                    </button>
+                    <a class="dropdown-item" href="/contracts/{{ year }}/edit?contract_no={{ r.contract_no|urlencode }}">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Chỉnh sửa
                     </a>
-                  {% endif %}
-                  <a href="/annexes/new?year={{ year }}&contract_no={{ r.contract_no }}" class="btn btn-sm btn-primary" title="Tạo phụ lục">
-                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    PL
-                  </a>
-                  <button class="btn btn-sm btn-danger" onclick="deleteContract('{{ year }}', '{{ r.contract_no }}')" title="Xóa">
-                    <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                    {% if r.download_url %}
+                      <a class="dropdown-item" href="{{ r.download_url }}">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Tải xuống HĐ
+                      </a>
+                    {% endif %}
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/annexes/new?year={{ year }}&contract_no={{ r.contract_no }}">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Tạo phụ lục
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item dropdown-item-danger" onclick="deleteContract('{{ year }}', '{{ r.contract_no }}')">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Xóa hợp đồng
+                    </button>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -301,6 +314,35 @@
       </svg>
       Tạo tài liệu
     </a>
+    <div style="margin-left: auto; display: flex; gap: var(--space-3);">
+      <a href="/storage/excel/download/{{ year }}" class="btn btn-info">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Tải file tổng hợp HĐ
+      </a>
+      <button class="btn btn-warning" onclick="showSavedFiles()">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+        File đã lưu
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="savedFilesModal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-header">
+      <h2>File đã lưu - Năm {{ year }}</h2>
+      <button class="modal-close" onclick="closeSavedFilesModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="savedFilesContent">
+      <div style="text-align: center; padding: 2rem;">
+        <div class="spinner"></div>
+        <p>Đang tải danh sách file...</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -503,6 +545,74 @@
   text-align: right;
   word-break: break-word;
 }
+
+.actions-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: var(--space-2);
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.dropdown-item:hover {
+  background: var(--gray-50);
+}
+
+.dropdown-item .icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.dropdown-item-danger {
+  color: var(--danger);
+}
+
+.dropdown-item-danger:hover {
+  background: var(--danger-50);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--gray-200);
+  margin: var(--space-1) 0;
+}
 </style>
 
 <script>
@@ -654,6 +764,121 @@ document.getElementById('contractDetailModal').addEventListener('click', functio
   }
 });
 
+// Saved Files Modal
+function showSavedFiles() {
+  const modal = document.getElementById('savedFilesModal');
+  const content = document.getElementById('savedFilesContent');
+
+  modal.style.display = 'flex';
+  content.innerHTML = `
+    <div style="text-align: center; padding: 2rem;">
+      <div class="spinner"></div>
+      <p>Đang tải danh sách file...</p>
+    </div>
+  `;
+
+  fetch('/storage/files/{{ year }}')
+    .then(res => res.json())
+    .then(files => {
+      if (files.length === 0) {
+        content.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">
+            <p>Chưa có file nào được lưu trong năm {{ year }}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const formatSize = (bytes) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      };
+
+      const getFileIcon = (type) => {
+        if (type === 'docx') return '📄';
+        if (type === 'xlsx') return '📊';
+        return '📁';
+      };
+
+      content.innerHTML = `
+        <div style="max-height: 500px; overflow-y: auto;">
+          <table class="table" style="margin: 0;">
+            <thead>
+              <tr>
+                <th style="width: 50px;"></th>
+                <th>Tên file</th>
+                <th style="width: 100px;">Kích thước</th>
+                <th style="width: 150px;">Ngày sửa</th>
+                <th style="width: 100px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${files.map(f => `
+                <tr>
+                  <td style="text-align: center; font-size: 24px;">${getFileIcon(f.type)}</td>
+                  <td><strong>${f.name}</strong></td>
+                  <td>${formatSize(f.size)}</td>
+                  <td style="color: var(--text-secondary); font-size: var(--text-sm);">${f.modified}</td>
+                  <td>
+                    <a href="${f.url}" class="btn btn-sm btn-success" title="Tải xuống">
+                      <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </a>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    })
+    .catch(err => {
+      content.innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: var(--danger);">
+          <p>Lỗi: ${err.message}</p>
+        </div>
+      `;
+    });
+}
+
+function closeSavedFilesModal() {
+  document.getElementById('savedFilesModal').style.display = 'none';
+}
+
+document.getElementById('savedFilesModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeSavedFilesModal();
+  }
+});
+
+// Dropdown Menu
+function toggleDropdown(button) {
+  const dropdown = button.closest('.actions-dropdown');
+  const menu = dropdown.querySelector('.dropdown-menu');
+
+  // Close all other dropdowns
+  document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+    if (m !== menu) m.classList.remove('show');
+  });
+
+  // Toggle current dropdown
+  menu.classList.toggle('show');
+
+  // Stop propagation to prevent immediate close
+  event.stopPropagation();
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.actions-dropdown')) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+      m.classList.remove('show');
+    });
+  }
+});
+
 // Contract Row Tooltip
 (function() {
   const tooltip = document.createElement('div');
@@ -739,5 +964,10 @@ document.getElementById('contractDetailModal').addEventListener('click', functio
     });
   });
 })();
+
+// Initialize Enhanced Tables for search and pagination
+if (typeof initEnhancedTables === 'function') {
+  initEnhancedTables();
+}
 </script>
 {% endblock %}
