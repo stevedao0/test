@@ -894,10 +894,22 @@ document.addEventListener('click', function(e) {
   let hideTimeout;
   let currentRow = null;
 
+  function hideTooltip() {
+    clearTimeout(showTimeout);
+    tooltip.classList.remove('show');
+  }
+
   // Use event delegation on tbody
   document.addEventListener('mouseenter', function(e) {
     const row = e.target.closest('.contract-row');
     if (!row) return;
+
+    // Don't show tooltip if hovering over buttons, dropdowns, or links
+    const isOverInteractive = e.target.closest('button, a, .dropdown-menu, .dropdown-toggle, .actions-dropdown');
+    if (isOverInteractive) {
+      hideTooltip();
+      return;
+    }
 
     currentRow = row;
     clearTimeout(hideTimeout);
@@ -974,6 +986,19 @@ document.addEventListener('click', function(e) {
     hideTimeout = setTimeout(() => {
       tooltip.classList.remove('show');
     }, 100);
+  }, true);
+
+  // Hide tooltip when clicking anywhere, especially on buttons
+  document.addEventListener('click', function(e) {
+    hideTooltip();
+  }, true);
+
+  // Hide tooltip when hovering over interactive elements
+  document.addEventListener('mousemove', function(e) {
+    const isOverInteractive = e.target.closest('button, a, .dropdown-menu, .dropdown-toggle, .actions-dropdown');
+    if (isOverInteractive && tooltip.classList.contains('show')) {
+      hideTooltip();
+    }
   }, true);
 })();
 
