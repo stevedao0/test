@@ -27,17 +27,26 @@
 
     <form method="post" action="/annexes" data-validate-form data-loading>
       <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr;">
-        <div class="form-group">
-          <label class="form-label" for="contract_no_select">
-            Chọn hợp đồng có sẵn (tùy chọn)
+        <div class="form-group" style="position: relative;">
+          <label class="form-label" for="contract_search">
+            Tìm hợp đồng có sẵn (tùy chọn)
           </label>
-          <select id="contract_no_select" class="form-input">
-            <option value="">-- Không chọn (nhập thủ công bên dưới) --</option>
-            {% for r in contracts %}
-              <option value="{{ r.contract_no }}" {% if selected_contract_no == r.contract_no %}selected{% endif %}>{{ r.contract_no }}{% if r.kenh_ten %} - {{ r.kenh_ten }}{% endif %}</option>
+          <input
+            id="contract_search"
+            type="text"
+            class="form-input"
+            placeholder="Gõ số hợp đồng hoặc tên kênh để tìm kiếm..."
+            autocomplete="off"
+            list="contract_suggestions"
+            value="{{ selected_contract_no or '' }}"
+          />
+          <datalist id="contract_suggestions">
+            {% for r in contracts[:50] %}
+              <option value="{{ r.contract_no }}">{{ r.contract_no }}{% if r.kenh_ten %} - {{ r.kenh_ten }}{% endif %}</option>
             {% endfor %}
-          </select>
-          <div class="input-help-text">Chọn hợp đồng để tự động nạp dữ liệu, hoặc bỏ qua để nhập thủ công</div>
+          </datalist>
+          <div id="contract_search_results" style="position: absolute; z-index: 1000; background: white; border: 1px solid var(--gray-200); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 300px; overflow-y: auto; display: none; width: 100%; margin-top: 2px;"></div>
+          <div class="input-help-text">Gõ để tìm kiếm hợp đồng, chọn để tự động nạp dữ liệu, hoặc bỏ qua để nhập thủ công</div>
         </div>
       </div>
 
@@ -436,19 +445,90 @@
 
 <script>
   (function () {
-    const contractNoSelect = document.getElementById('contract_no_select');
+    const contractSearch = document.getElementById('contract_search');
     const contractNoInput = document.getElementById('contract_no');
+    const searchResults = document.getElementById('contract_search_results');
 
-    if (!contractNoSelect || !contractNoInput) return;
+    if (!contractSearch || !contractNoInput) return;
 
-    contractNoSelect.addEventListener('change', function () {
-      const v = contractNoSelect.value || '';
-      if (v) {
-        contractNoInput.value = v;
-        const params = new URLSearchParams(window.location.search);
-        params.set('year', '{{ year }}');
-        params.set('contract_no', v);
-        window.location.href = '/annexes/new?' + params.toString();
+    let allContracts = [];
+    let searchTimeout = null;
+
+    // Load all contracts on page load
+    fetch('/api/contracts?year={{ year }}')
+      .then(res => res.json())
+      .then(data => {
+        allContracts = data.contracts || [];
+      })
+      .catch(err => console.error('Failed to load contracts:', err));
+
+    // Search functionality
+    contractSearch.addEventListener('input', function () {
+      clearTimeout(searchTimeout);
+      const query = this.value.trim().toLowerCase();
+
+      if (query.length < 2) {
+        searchResults.style.display = 'none';
+        return;
+      }
+
+      searchTimeout = setTimeout(() => {
+        const filtered = allContracts.filter(c => {
+          const contractNo = (c.contract_no || '').toLowerCase();
+          const channelName = (c.kenh_ten || '').toLowerCase();
+          return contractNo.includes(query) || channelName.includes(query);
+        }).slice(0, 20);
+
+        if (filtered.length > 0) {
+          searchResults.innerHTML = filtered.map(c => `
+            <div class="search-result-item" data-contract-no="${c.contract_no}" style="padding: var(--space-3); cursor: pointer; border-bottom: 1px solid var(--gray-100); hover:background: var(--gray-50);">
+              <div style="font-weight: 600; color: var(--gray-900);">${c.contract_no}</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">${c.kenh_ten || 'Chưa có tên kênh'}</div>
+            </div>
+          `).join('');
+          searchResults.style.display = 'block';
+
+          // Add click handlers
+          searchResults.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', function () {
+              const contractNo = this.getAttribute('data-contract-no');
+              contractSearch.value = contractNo;
+              contractNoInput.value = contractNo;
+              searchResults.style.display = 'none';
+
+              // Reload page with selected contract
+              const params = new URLSearchParams(window.location.search);
+              params.set('year', '{{ year }}');
+              params.set('contract_no', contractNo);
+              window.location.href = '/annexes/new?' + params.toString();
+            });
+
+            item.addEventListener('mouseenter', function () {
+              this.style.background = 'var(--gray-50)';
+            });
+
+            item.addEventListener('mouseleave', function () {
+              this.style.background = 'white';
+            });
+          });
+        } else {
+          searchResults.innerHTML = '<div style="padding: var(--space-4); text-align: center; color: var(--text-secondary);">Không tìm thấy hợp đồng</div>';
+          searchResults.style.display = 'block';
+        }
+      }, 300);
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!contractSearch.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.style.display = 'none';
+      }
+    });
+
+    // Show results when focusing on input
+    contractSearch.addEventListener('focus', function () {
+      if (this.value.trim().length >= 2 && searchResults.children.length > 0) {
+        searchResults.style.display = 'block';
       }
     });
   })();

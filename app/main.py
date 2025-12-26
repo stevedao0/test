@@ -848,6 +848,37 @@ def create_contract(
         return RedirectResponse(url=f"/documents/new?doc_type=contract&error={msg}", status_code=303)
 
 
+@app.get("/api/contracts")
+def api_contracts_list(year: int | None = None, q: str | None = None):
+    y = year or date.today().year
+    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
+    rows = read_contracts(excel_path=excel_path)
+
+    # Filter: only show contracts (annex_no is empty)
+    contracts = [r for r in rows if not r.get("annex_no")]
+
+    # Apply search filter if provided
+    if q:
+        q_lower = q.lower()
+        contracts = [
+            c for c in contracts
+            if q_lower in (c.get("contract_no") or "").lower()
+            or q_lower in (c.get("kenh_ten") or "").lower()
+        ]
+
+    # Serialize and return only essential fields
+    result = []
+    for c in contracts:
+        result.append({
+            "contract_no": c.get("contract_no"),
+            "kenh_ten": c.get("kenh_ten"),
+            "don_vi_ten": c.get("don_vi_ten"),
+            "kenh_id": c.get("kenh_id"),
+        })
+
+    return JSONResponse({"contracts": result})
+
+
 @app.get("/contracts", response_class=HTMLResponse)
 def contracts_list(request: Request, year: int | None = None, download: str | None = None, download2: str | None = None):
     y = year or date.today().year
