@@ -11,8 +11,8 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    supabase_url: str = os.getenv("VITE_SUPABASE_URL", "")
-    supabase_anon_key: str = os.getenv("VITE_SUPABASE_SUPABASE_ANON_KEY", "")
+    supabase_url: str = os.getenv("SUPABASE_URL", "") or os.getenv("VITE_SUPABASE_URL", "")
+    supabase_anon_key: str = os.getenv("SUPABASE_ANON_KEY", "") or os.getenv("VITE_SUPABASE_ANON_KEY", "")
 
     project_root: Path = Path(__file__).resolve().parents[2]
 
