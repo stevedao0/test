@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Nhat ky he thong</h1>
+  <p class="page-subtitle">Theo doi cac thay doi trong he thong de dam bao tinh toan ven du lieu</p>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <div class="p-4 border-b border-slate-200 bg-slate-50">
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-slate-600">Hien thi <strong>{{ logs|length }}</strong> ban ghi gan nhat</span>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full">
+      <thead>
+        <tr class="bg-slate-50 border-b border-slate-200">
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Thoi gian</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Hanh dong</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Bang</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID ban ghi</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Nguoi thuc hien</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Chi tiet</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+        {% for log in logs %}
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-4 py-3 text-sm text-slate-600">
+            {{ log.created_at[:19].replace('T', ' ') if log.created_at else '-' }}
+          </td>
+          <td class="px-4 py-3">
+            {% if log.action == 'INSERT' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Tao moi
+            </span>
+            {% elif log.action == 'UPDATE' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Cap nhat
+            </span>
+            {% elif log.action == 'DELETE' %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              Xoa
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+              {{ log.action }}
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-900 font-medium">{{ log.table_name }}</td>
+          <td class="px-4 py-3 text-sm text-slate-500 font-mono">{{ log.record_id[:8] if log.record_id else '-' }}...</td>
+          <td class="px-4 py-3 text-sm text-slate-600">{{ log.user_email or log.user_id[:8] if log.user_id else 'System' }}...</td>
+          <td class="px-4 py-3 text-right">
+            <button
+              onclick="showLogDetail('{{ log.id }}')"
+              class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Xem
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="logDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="font-semibold text-slate-800">Chi tiet thay doi</h3>
+      <button onclick="closeLogDetail()" class="text-slate-400 hover:text-slate-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+      <div id="logDetailContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const logs = {{ logs|tojson|safe }};
+
+function showLogDetail(logId) {
+  const log = logs.find(l => l.id === logId);
+  if (!log) return;
+
+  const content = document.getElementById('logDetailContent');
+  content.innerHTML = `
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-500 uppercase mb-1">Hanh dong</label>
+          <p class="text-sm text-slate-900">${log.action}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 uppercase mb-1">Bang</label>
+          <p class="text-sm text-slate-900">${log.table_name}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 uppercase mb-1">ID ban ghi</label>
+          <p class="text-sm text-slate-900 font-mono">${log.record_id}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-500 uppercase mb-1">Thoi gian</label>
+          <p class="text-sm text-slate-900">${log.created_at}</p>
+        </div>
+      </div>
+
+      ${log.old_data ? `
+      <div>
+        <label class="block text-xs font-medium text-slate-500 uppercase mb-1">Du lieu cu</label>
+        <pre class="bg-red-50 p-3 rounded-lg text-xs overflow-x-auto text-red-800">${JSON.stringify(log.old_data, null, 2)}</pre>
+      </div>
+      ` : ''}
+
+      ${log.new_data ? `
+      <div>
+        <label class="block text-xs font-medium text-slate-500 uppercase mb-1">Du lieu moi</label>
+        <pre class="bg-green-50 p-3 rounded-lg text-xs overflow-x-auto text-green-800">${JSON.stringify(log.new_data, null, 2)}</pre>
+      </div>
+      ` : ''}
+    </div>
+  `;
+
+  document.getElementById('logDetailModal').classList.remove('hidden');
+  document.getElementById('logDetailModal').classList.add('flex');
+}
+
+function closeLogDetail() {
+  document.getElementById('logDetailModal').classList.add('hidden');
+  document.getElementById('logDetailModal').classList.remove('flex');
+}
+
+document.getElementById('logDetailModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeLogDetail();
+  }
+});
+</script>
+{% endblock %}

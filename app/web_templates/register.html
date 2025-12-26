@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Dang ky" }} - Contract Pilot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+          <svg class="w-8 h-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800">Dang ky tai khoan</h1>
+        <p class="text-slate-500 mt-2">Tao tai khoan moi de su dung he thong</p>
+      </div>
+
+      {% if error %}
+      <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="/auth/register" class="space-y-5">
+        <div>
+          <label for="full_name" class="block text-sm font-medium text-slate-700 mb-1">Ho va ten</label>
+          <input
+            type="text"
+            id="full_name"
+            name="full_name"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            placeholder="Nguyen Van A"
+          />
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            placeholder="email@example.com"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Mat khau</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            minlength="6"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            placeholder="It nhat 6 ky tu"
+          />
+        </div>
+
+        <div>
+          <label for="password_confirm" class="block text-sm font-medium text-slate-700 mb-1">Xac nhan mat khau</label>
+          <input
+            type="password"
+            id="password_confirm"
+            name="password_confirm"
+            required
+            minlength="6"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            placeholder="Nhap lai mat khau"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Dang ky
+        </button>
+      </form>
+
+      <p class="text-center text-slate-500 text-sm mt-6">
+        Da co tai khoan?
+        <a href="/auth/login" class="text-blue-600 hover:underline font-medium">Dang nhap</a>
+      </p>
+
+      <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <p class="text-sm text-amber-800">
+          <strong>Luu y:</strong> Tai khoan moi se co quyen "Viewer" (chi xem). Lien he Admin de duoc cap quyen Editor hoac Admin.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

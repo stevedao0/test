@@ -7,7 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile, Depends
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -26,7 +26,6 @@ from app.config import (
 )
 from app.documents.naming import build_docx_filename
 from app.models import ContractCreate, ContractRecord
-# from app.services.annex_store import append_annex_row  # No longer needed - annexes saved to contracts Excel
 from app.services.docx_renderer import date_parts, render_contract_docx
 from app.services.excel_store import (
     append_contract_row,
@@ -36,9 +35,21 @@ from app.services.excel_store import (
     read_contracts,
     update_contract_row,
 )
+from app.services.auth import (
+    get_current_user,
+    require_auth,
+    require_editor,
+    require_admin,
+    CurrentUser,
+    UserRole,
+)
+from app.routes import auth_router, admin_router
 
 
 app = FastAPI()
+
+app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 def _pick_existing_dir(primary: Path, fallback: Path) -> Path:
@@ -302,15 +313,20 @@ def _year_from_contract_no(contract_no: str) -> int:
 
 
 @app.get("/works/import", response_class=HTMLResponse)
-def works_import_form(request: Request, error: str | None = None, message: str | None = None):
+async def works_import_form(request: Request, error: str | None = None, message: str | None = None):
+    current_user = await get_current_user(request)
+    if not current_user:
+        return RedirectResponse(url="/auth/login", status_code=303)
+
     return templates.TemplateResponse(
         "works_import.html",
         {
             "request": request,
-            "title": "Import danh sách tác phẩm",
+            "title": "Import danh sach tac pham",
             "error": error,
             "message": message,
             "breadcrumbs": get_breadcrumbs(request.url.path),
+            "current_user": current_user,
         },
     )
 
@@ -633,12 +649,18 @@ def get_breadcrumbs(path: str):
 
 
 @app.get("/", response_class=HTMLResponse)
-def home() -> RedirectResponse:
+async def home(request: Request) -> RedirectResponse:
+    user = await get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/auth/login", status_code=303)
     return RedirectResponse(url="/documents/new")
 
 
 @app.get("/contracts/new", response_class=HTMLResponse)
-def contract_form(request: Request, error: str | None = None):
+async def contract_form(request: Request, error: str | None = None):
+    user = await get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/auth/login", status_code=303)
     url = f"/documents/new?doc_type=contract"
     if error:
         url += f"&error={error}"
@@ -646,7 +668,7 @@ def contract_form(request: Request, error: str | None = None):
 
 
 @app.post("/contracts")
-def create_contract(
+async def create_contract(
     request: Request,
     ngay_lap_hop_dong: str = Form(...),
     so_hop_dong_4: str = Form(...),
@@ -655,7 +677,7 @@ def create_contract(
     don_vi_dia_chi: str = Form(""),
     don_vi_dien_thoai: str = Form(""),
     don_vi_nguoi_dai_dien: str = Form(""),
-    don_vi_chuc_vu: str = Form("Giám đốc"),
+    don_vi_chuc_vu: str = Form("Giam doc"),
     don_vi_mst: str = Form(""),
     don_vi_email: str = Form(""),
     so_CCCD: str = Form(""),
@@ -666,6 +688,11 @@ def create_contract(
     so_tien_chua_GTGT: str = Form(""),
     thue_percent: str = Form(""),
 ):
+    user = await get_current_user(request)
+    if not user:
+        return RedirectResponse(url="/auth/login", status_code=303)
+    if user.role == UserRole.VIEWER:
+        return RedirectResponse(url="/contracts?error=Ban khong co quyen tao hop dong", status_code=303)
     try:
         channel_id, channel_link = normalize_youtube_channel_input(kenh_id)
 
@@ -898,7 +925,11 @@ def api_contracts_list(year: int | None = None, q: str | None = None):
 
 
 @app.get("/contracts", response_class=HTMLResponse)
-def contracts_list(request: Request, year: int | None = None, download: str | None = None, download2: str | None = None):
+async def contracts_list(request: Request, year: int | None = None, download: str | None = None, download2: str | None = None):
+    current_user = await get_current_user(request)
+    if not current_user:
+        return RedirectResponse(url="/auth/login", status_code=303)
+
     y = year or date.today().year
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
 
@@ -952,19 +983,24 @@ def contracts_list(request: Request, year: int | None = None, download: str | No
         "contracts_list.html",
         {
             "request": request,
-            "title": "Danh sách hợp đồng",
+            "title": "Danh sach hop dong",
             "year": y,
             "rows": contracts,
             "stats": stats,
             "download": download,
             "download2": download2,
             "breadcrumbs": get_breadcrumbs(request.url.path),
+            "current_user": current_user,
         },
     )
 
 
 @app.get("/annexes", response_class=HTMLResponse)
-def annexes_list(request: Request, year: int | None = None, download: str | None = None):
+async def annexes_list(request: Request, year: int | None = None, download: str | None = None):
+    current_user = await get_current_user(request)
+    if not current_user:
+        return RedirectResponse(url="/auth/login", status_code=303)
+
     y = year or date.today().year
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
 
@@ -1040,12 +1076,13 @@ def annexes_list(request: Request, year: int | None = None, download: str | None
         "annexes_list.html",
         {
             "request": request,
-            "title": "Danh sách phụ lục",
+            "title": "Danh sach phu luc",
             "year": y,
             "rows": annexes,
             "stats": stats,
             "download": download,
             "breadcrumbs": get_breadcrumbs(request.url.path),
+            "current_user": current_user,
         },
     )
 
@@ -1120,7 +1157,13 @@ def get_contract_detail(year: int, contract_no: str):
 
 
 @app.get("/contracts/{year}/edit", response_class=HTMLResponse)
-def edit_contract_form(request: Request, year: int, contract_no: str):
+async def edit_contract_form(request: Request, year: int, contract_no: str):
+    current_user = await get_current_user(request)
+    if not current_user:
+        return RedirectResponse(url="/auth/login", status_code=303)
+    if current_user.role == UserRole.VIEWER:
+        return RedirectResponse(url=f"/contracts?year={year}&error=Ban khong co quyen chinh sua", status_code=303)
+
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
     rows = read_contracts(excel_path=excel_path)
 
@@ -1131,16 +1174,14 @@ def edit_contract_form(request: Request, year: int, contract_no: str):
             break
 
     if not contract:
-        return RedirectResponse(url=f"/contracts?year={year}&error=Không tìm thấy hợp đồng", status_code=303)
+        return RedirectResponse(url=f"/contracts?year={year}&error=Khong tim thay hop dong", status_code=303)
 
-    # Format date for form input
     ngay_lap = contract.get("ngay_lap_hop_dong")
     if isinstance(ngay_lap, (date, datetime)):
         if isinstance(ngay_lap, datetime):
             ngay_lap = ngay_lap.date()
         contract["ngay_lap_hop_dong"] = ngay_lap.isoformat()
 
-    # Parse so_hop_dong_4 from contract_no
     so_hop_dong_4 = _parse_so_hop_dong_4(contract_no)
     contract["so_hop_dong_4"] = so_hop_dong_4
 
@@ -1148,10 +1189,11 @@ def edit_contract_form(request: Request, year: int, contract_no: str):
         "contract_edit.html",
         {
             "request": request,
-            "title": f"Chỉnh sửa hợp đồng {contract_no}",
+            "title": f"Chinh sua hop dong {contract_no}",
             "contract": contract,
             "year": year,
             "breadcrumbs": get_breadcrumbs(request.url.path),
+            "current_user": current_user,
         },
     )
 
@@ -1593,17 +1635,20 @@ def create_annex(
 
 
 @app.get("/documents/new", response_class=HTMLResponse)
-def document_form_unified(
+async def document_form_unified(
     request: Request,
     doc_type: str | None = None,
     year: int | None = None,
     contract_no: str | None = None,
     error: str | None = None,
 ):
+    current_user = await get_current_user(request)
+    if not current_user:
+        return RedirectResponse(url="/auth/login", status_code=303)
+
     y = year or date.today().year
     contracts = read_contracts(excel_path=STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx")
 
-    # Filter: only show base contracts (no annex_no) for dropdown
     contracts = [r for r in contracts if not r.get("annex_no")]
 
     preview: dict = {}
@@ -1623,7 +1668,7 @@ def document_form_unified(
         "document_form.html",
         {
             "request": request,
-            "title": "Tạo tài liệu",
+            "title": "Tao tai lieu",
             "error": error,
             "doc_type": doc_type or "contract",
             "contracts": contracts,
@@ -1632,6 +1677,7 @@ def document_form_unified(
             "today": date.today().isoformat(),
             "selected_contract_no": contract_no or "",
             "breadcrumbs": get_breadcrumbs(request.url.path),
+            "current_user": current_user,
         },
     )
 
