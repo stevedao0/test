@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 
@@ -20,6 +21,11 @@ STORAGE_EXCEL_DIR = STORAGE_DIR / "excel"
 UI_DIR = PROJECT_ROOT / "app" / "ui"
 UI_TEMPLATES_DIR = UI_DIR / "templates"
 UI_STATIC_DIR = UI_DIR / "static"
+
+
+REGION_CODE = os.getenv("REGION_CODE", "PN")
+FIELD_CODE = os.getenv("FIELD_CODE", "MR")
+FIELD_NAME = os.getenv("FIELD_NAME", FIELD_CODE)
 
 # Legacy (kept for backward compatibility during refactor)
 WEB_TEMPLATES_DIR = PROJECT_ROOT / "app" / "web_templates"
