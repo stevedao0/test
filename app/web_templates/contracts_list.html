@@ -897,23 +897,10 @@ document.addEventListener('click', function(e) {
   function hideTooltip() {
     clearTimeout(showTimeout);
     tooltip.classList.remove('show');
+    currentRow = null;
   }
 
-  // Use event delegation on tbody
-  document.addEventListener('mouseenter', function(e) {
-    const row = e.target.closest('.contract-row');
-    if (!row) return;
-
-    // Don't show tooltip if hovering over buttons, dropdowns, or links
-    const isOverInteractive = e.target.closest('button, a, .dropdown-menu, .dropdown-toggle, .actions-dropdown');
-    if (isOverInteractive) {
-      hideTooltip();
-      return;
-    }
-
-    currentRow = row;
-    clearTimeout(hideTimeout);
-
+  function showTooltip(row) {
     const contractNo = row.dataset.contractNo;
     const channel = row.dataset.channel;
     const unit = row.dataset.unit;
@@ -955,51 +942,79 @@ document.addEventListener('click', function(e) {
       </div>
     `;
 
+    const rect = row.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    let left = rect.right + 10;
+    let top = rect.top + window.scrollY;
+
+    // Check if tooltip goes off-screen to the right
+    if (left + tooltipRect.width > window.innerWidth) {
+      left = rect.left - tooltipRect.width - 10;
+    }
+
+    // Check if tooltip goes off-screen at bottom
+    if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
+      top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
+    }
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.classList.add('show');
+  }
+
+  // Use delegation on tbody
+  document.addEventListener('mouseover', function(e) {
+    const row = e.target.closest('.contract-row');
+    if (!row) {
+      if (currentRow) {
+        clearTimeout(showTimeout);
+        hideTimeout = setTimeout(hideTooltip, 100);
+      }
+      return;
+    }
+
+    // Don't show tooltip if hovering over interactive elements
+    if (e.target.closest('button, a, .dropdown-menu, .dropdown-toggle, .actions-dropdown')) {
+      hideTooltip();
+      return;
+    }
+
+    // Same row, do nothing
+    if (row === currentRow) {
+      clearTimeout(hideTimeout);
+      return;
+    }
+
+    // New row
+    currentRow = row;
+    clearTimeout(hideTimeout);
+    clearTimeout(showTimeout);
+
     showTimeout = setTimeout(() => {
-      const rect = row.getBoundingClientRect();
-      const tooltipRect = tooltip.getBoundingClientRect();
-
-      let left = rect.right + 10;
-      let top = rect.top + window.scrollY;
-
-      // Check if tooltip goes off-screen to the right
-      if (left + tooltipRect.width > window.innerWidth) {
-        left = rect.left - tooltipRect.width - 10;
+      if (currentRow === row) {
+        showTooltip(row);
       }
-
-      // Check if tooltip goes off-screen at bottom
-      if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
-        top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
-      }
-
-      tooltip.style.left = left + 'px';
-      tooltip.style.top = top + 'px';
-      tooltip.classList.add('show');
     }, 300);
-  }, true);
+  });
 
-  document.addEventListener('mouseleave', function(e) {
+  document.addEventListener('mouseout', function(e) {
     const row = e.target.closest('.contract-row');
     if (!row || row !== currentRow) return;
 
-    clearTimeout(showTimeout);
-    hideTimeout = setTimeout(() => {
-      tooltip.classList.remove('show');
-    }, 100);
-  }, true);
-
-  // Hide tooltip when clicking anywhere, especially on buttons
-  document.addEventListener('click', function(e) {
-    hideTooltip();
-  }, true);
-
-  // Hide tooltip when hovering over interactive elements
-  document.addEventListener('mousemove', function(e) {
-    const isOverInteractive = e.target.closest('button, a, .dropdown-menu, .dropdown-toggle, .actions-dropdown');
-    if (isOverInteractive && tooltip.classList.contains('show')) {
-      hideTooltip();
+    // Check if we're leaving the row
+    const relatedTarget = e.relatedTarget;
+    if (!relatedTarget || !row.contains(relatedTarget)) {
+      clearTimeout(showTimeout);
+      hideTimeout = setTimeout(hideTooltip, 100);
     }
-  }, true);
+  });
+
+  // Hide tooltip when clicking anywhere
+  document.addEventListener('click', hideTooltip);
+
+  // Hide tooltip on scroll
+  window.addEventListener('scroll', hideTooltip);
 })();
 
 // Initialize Enhanced Tables for search and pagination

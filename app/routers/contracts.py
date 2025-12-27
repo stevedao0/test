@@ -168,6 +168,7 @@ def create_contract(
         context = {
             "contract_no": contract_no,
             "so_hop_dong": contract_no,
+            "so_hop_dong_day_du": contract_no,
             "linh_vuc": linh_vuc_value,
             **date_parts(payload.ngay_lap_hop_dong),
             "ngay_ky_hop_dong": f"{payload.ngay_lap_hop_dong.day:02d}",
