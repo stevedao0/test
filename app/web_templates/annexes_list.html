@@ -442,7 +442,7 @@ document.addEventListener('click', function(e) {
 });
 
 // Annex Row Tooltip - Using event delegation for dynamic content
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
   const tooltip = document.createElement('div');
   tooltip.className = 'annex-tooltip';
   document.body.appendChild(tooltip);
@@ -458,15 +458,20 @@ document.addEventListener('click', function(e) {
   }
 
   function showTooltip(row) {
-    const contractNo = row.dataset.contractNo;
-    const annexNo = row.dataset.annexNo;
-    const channel = row.dataset.channel;
-    const unit = row.dataset.unit;
-    const dateContract = row.dataset.dateContract;
-    const dateAnnex = row.dataset.dateAnnex;
-    const amount = row.dataset.amount;
-    const email = row.dataset.email;
-    const phone = row.dataset.phone;
+    if (!row || !row.dataset) {
+      console.warn('Invalid row for tooltip', row);
+      return;
+    }
+
+    const contractNo = row.dataset.contractNo || 'N/A';
+    const annexNo = row.dataset.annexNo || 'N/A';
+    const channel = row.dataset.channel || 'Chưa có';
+    const unit = row.dataset.unit || 'Chưa có';
+    const dateContract = row.dataset.dateContract || 'Chưa có';
+    const dateAnnex = row.dataset.dateAnnex || 'Chưa có';
+    const amount = row.dataset.amount || 'Chưa có';
+    const email = row.dataset.email || 'Chưa có';
+    const phone = row.dataset.phone || 'Chưa có';
 
     tooltip.innerHTML = `
       <h4>📎 ${contractNo} - Phụ lục ${annexNo}</h4>
@@ -500,6 +505,9 @@ document.addEventListener('click', function(e) {
       </div>
     `;
 
+    // Force reflow for positioning
+    tooltip.offsetHeight;
+
     const rect = row.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
 
@@ -521,8 +529,14 @@ document.addEventListener('click', function(e) {
     tooltip.classList.add('show');
   }
 
-  // Use delegation on document
-  document.addEventListener('mouseover', function(e) {
+  // Use delegation on tbody
+  const tbody = document.querySelector('[data-table-body]');
+  if (!tbody) {
+    console.warn('Table body not found for tooltip');
+    return;
+  }
+
+  tbody.addEventListener('mouseover', function(e) {
     const row = e.target.closest('.annex-row');
     if (!row) {
       if (currentRow) {
@@ -556,7 +570,7 @@ document.addEventListener('click', function(e) {
     }, 300);
   });
 
-  document.addEventListener('mouseout', function(e) {
+  tbody.addEventListener('mouseout', function(e) {
     const row = e.target.closest('.annex-row');
     if (!row || row !== currentRow) return;
 
@@ -573,7 +587,7 @@ document.addEventListener('click', function(e) {
 
   // Hide tooltip on scroll
   window.addEventListener('scroll', hideTooltip);
-})();
+});
 
 // Initialize Enhanced Tables for search and pagination
 document.addEventListener('DOMContentLoaded', function() {
