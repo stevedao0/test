@@ -83,15 +83,22 @@ class EnhancedTable {
   }
 
   extractDataFromTable() {
-    if (!this.tableBody) return;
+    if (!this.tableBody) {
+      console.error('❌ tableBody is null!');
+      return;
+    }
 
     const rows = this.tableBody.querySelectorAll('tr');
-    this.data = Array.from(rows).map(row => {
+    console.log(`  - Found ${rows.length} rows in tbody`);
+
+    this.data = Array.from(rows).map((row, idx) => {
       const rowClone = row.cloneNode(true);
 
       rowClone.querySelectorAll('.copy-icon').forEach(icon => icon.remove());
 
       const cells = row.querySelectorAll('td');
+      const allCellText = [];
+
       const rowData = {
         _html: rowClone.innerHTML,
         _element: row,
@@ -104,11 +111,24 @@ class EnhancedTable {
 
       cells.forEach((cell, index) => {
         const th = this.table.querySelectorAll('th')[index];
+        const cellText = cell.textContent.trim();
+        allCellText.push(cellText);
+
         const columnName = th ? th.getAttribute('data-sort') : `col_${index}`;
         if (columnName) {
-          rowData[columnName] = cell.textContent.trim();
+          if (!rowData[columnName]) {
+            rowData[columnName] = cellText;
+          } else {
+            rowData[`${columnName}_${index}`] = cellText;
+          }
         }
       });
+
+      rowData._searchText = allCellText.join(' ').toLowerCase();
+
+      if (idx === 0) {
+        console.log('  - Sample row data:', rowData);
+      }
 
       return rowData;
     });
@@ -123,6 +143,10 @@ class EnhancedTable {
 
     this.filteredData = this.data.filter(row => {
       if (!this.searchQuery) return true;
+
+      if (row._searchText) {
+        return row._searchText.includes(this.searchQuery);
+      }
 
       return Object.keys(row).some(key => {
         if (key.startsWith('_')) return false;
