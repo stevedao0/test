@@ -59,8 +59,13 @@ class EnhancedTable {
       const cells = row.querySelectorAll('td');
       const rowData = {
         _html: row.innerHTML,
-        _element: row
+        _element: row,
+        _attributes: {}
       };
+
+      Array.from(row.attributes).forEach(attr => {
+        rowData._attributes[attr.name] = attr.value;
+      });
 
       cells.forEach((cell, index) => {
         const th = this.table.querySelectorAll('th')[index];
@@ -151,12 +156,23 @@ class EnhancedTable {
         pageData.forEach(rowData => {
           const tr = document.createElement('tr');
           tr.innerHTML = rowData._html;
+
+          if (rowData._attributes) {
+            Object.keys(rowData._attributes).forEach(attrName => {
+              tr.setAttribute(attrName, rowData._attributes[attrName]);
+            });
+          }
+
           this.tableBody.appendChild(tr);
         });
       }
     }
 
     this.renderPagination();
+
+    if (typeof window.reinitCopyToClipboard === 'function') {
+      window.reinitCopyToClipboard(this.tableBody);
+    }
   }
 
   renderPagination() {

@@ -1,154 +1,73 @@
+function setupCopyElement(el) {
+  if (el.querySelector('.copy-icon')) return;
+
+  el.style.cursor = 'pointer';
+  el.style.position = 'relative';
+
+  const copyIcon = document.createElement('span');
+  copyIcon.innerHTML = `
+    <svg style="width: 14px; height: 14px; margin-left: 6px; opacity: 0.5; transition: opacity 0.2s;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+  `;
+  copyIcon.className = 'copy-icon';
+  copyIcon.style.display = 'inline-block';
+  copyIcon.style.verticalAlign = 'middle';
+  el.appendChild(copyIcon);
+
+  el.addEventListener('mouseenter', () => {
+    copyIcon.querySelector('svg').style.opacity = '1';
+  });
+
+  el.addEventListener('mouseleave', () => {
+    copyIcon.querySelector('svg').style.opacity = '0.5';
+  });
+
+  el.addEventListener('click', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const textToCopy = this.dataset.copy || this.textContent.trim();
+
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+
+      const originalHTML = copyIcon.innerHTML;
+      copyIcon.innerHTML = `
+        <svg style="width: 14px; height: 14px; margin-left: 6px; color: var(--secondary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      `;
+
+      if (window.toast) {
+        window.toast.success('Đã copy: ' + textToCopy.substring(0, 50) + (textToCopy.length > 50 ? '...' : ''));
+      }
+
+      setTimeout(() => {
+        copyIcon.innerHTML = originalHTML;
+      }, 1500);
+    } catch (err) {
+      console.error('Copy failed:', err);
+      if (window.toast) {
+        window.toast.error('Không thể copy');
+      }
+    }
+  });
+}
+
 function initCopyToClipboard() {
-  document.querySelectorAll('[data-copy]').forEach(el => {
-    el.style.cursor = 'pointer';
-    el.style.position = 'relative';
-
-    const copyIcon = document.createElement('span');
-    copyIcon.innerHTML = `
-      <svg style="width: 14px; height: 14px; margin-left: 6px; opacity: 0.5; transition: opacity 0.2s;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-      </svg>
-    `;
-    copyIcon.className = 'copy-icon';
-    copyIcon.style.display = 'inline-block';
-    copyIcon.style.verticalAlign = 'middle';
-    el.appendChild(copyIcon);
-
-    el.addEventListener('mouseenter', () => {
-      copyIcon.querySelector('svg').style.opacity = '1';
-    });
-
-    el.addEventListener('mouseleave', () => {
-      copyIcon.querySelector('svg').style.opacity = '0.5';
-    });
-
-    el.addEventListener('click', async function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const textToCopy = this.dataset.copy || this.textContent.trim();
-
-      try {
-        await navigator.clipboard.writeText(textToCopy);
-
-        const originalHTML = copyIcon.innerHTML;
-        copyIcon.innerHTML = `
-          <svg style="width: 14px; height: 14px; margin-left: 6px; color: var(--secondary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-        `;
-
-        if (window.toast) {
-          window.toast.success('Đã copy: ' + textToCopy.substring(0, 50) + (textToCopy.length > 50 ? '...' : ''));
-        }
-
-        setTimeout(() => {
-          copyIcon.innerHTML = originalHTML;
-        }, 1500);
-      } catch (err) {
-        console.error('Copy failed:', err);
-        if (window.toast) {
-          window.toast.error('Không thể copy');
-        }
-      }
-    });
-  });
+  document.querySelectorAll('[data-copy]').forEach(setupCopyElement);
 }
 
-function initSmartSearch() {
-  const searchInputs = document.querySelectorAll('[data-table-search]');
-
-  searchInputs.forEach(input => {
-    const tableId = input.dataset.tableSearch;
-    const tableBody = document.querySelector(`[data-enhanced-table="${tableId}"] tbody`);
-
-    if (!tableBody) return;
-
-    const rows = Array.from(tableBody.querySelectorAll('tr'));
-    const originalContents = new Map();
-
-    rows.forEach(row => {
-      originalContents.set(row, row.innerHTML);
-    });
-
-    input.addEventListener('input', function() {
-      const searchTerm = this.value.toLowerCase().trim();
-
-      rows.forEach(row => {
-        row.innerHTML = originalContents.get(row);
-
-        if (!searchTerm) {
-          row.style.display = '';
-          return;
-        }
-
-        const text = row.textContent.toLowerCase();
-
-        if (text.includes(searchTerm)) {
-          row.style.display = '';
-
-          row.querySelectorAll('td').forEach(cell => {
-            if (cell.querySelector('.actions-dropdown') || cell.querySelector('button')) {
-              return;
-            }
-
-            const cellText = cell.textContent;
-            const cellTextLower = cellText.toLowerCase();
-
-            if (cellTextLower.includes(searchTerm)) {
-              const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
-              const highlightedHTML = cell.innerHTML.replace(regex,
-                '<mark style="background: linear-gradient(135deg, #FEF08A 0%, #FDE047 100%); padding: 2px 4px; border-radius: 3px; font-weight: 600; color: #854D0E;">$1</mark>'
-              );
-              cell.innerHTML = highlightedHTML;
-            }
-          });
-        } else {
-          row.style.display = 'none';
-        }
-      });
-
-      const visibleRows = rows.filter(row => row.style.display !== 'none');
-      const emptyState = tableBody.parentElement.querySelector('.empty-state');
-
-      if (visibleRows.length === 0 && !emptyState) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'empty-state search-no-results';
-        emptyDiv.innerHTML = `
-          <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <div class="empty-state-title">Không tìm thấy kết quả</div>
-          <div class="empty-state-description">Không có dữ liệu khớp với từ khóa "${escapeHtml(searchTerm)}"</div>
-        `;
-        tableBody.parentElement.appendChild(emptyDiv);
-      } else if (visibleRows.length > 0) {
-        const noResults = tableBody.parentElement.querySelector('.search-no-results');
-        if (noResults) {
-          noResults.remove();
-        }
-      }
-    });
-
-    input.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        this.value = '';
-        this.dispatchEvent(new Event('input'));
-        this.blur();
-      }
-    });
-  });
+function reinitCopyToClipboard(container) {
+  if (!container) return;
+  container.querySelectorAll('[data-copy]').forEach(setupCopyElement);
 }
 
-function escapeRegex(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+if (typeof window !== 'undefined') {
+  window.reinitCopyToClipboard = reinitCopyToClipboard;
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
 
 function initDragDropUpload() {
   const fileInputs = document.querySelectorAll('input[type="file"]');
@@ -405,8 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initCopyToClipboard();
   console.log('✓ Copy to Clipboard initialized');
 
-  initSmartSearch();
-  console.log('✓ Smart Search initialized');
+  console.log('✓ Smart Search disabled (using EnhancedTable)');
 
   initDragDropUpload();
   console.log('✓ Drag & Drop Upload initialized');
