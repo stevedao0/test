@@ -159,6 +159,7 @@
           {% for r in rows %}
             <tr class="annex-row"
                 data-contract-no="{{ r.contract_no }}"
+                data-year="{{ year }}"
                 data-annex-no="{{ r.annex_no or 'Chưa có' }}"
                 data-channel="{{ r.kenh_ten or 'Chưa có' }}"
                 data-unit="{{ r.don_vi_ten or 'Chưa có' }}"
@@ -167,10 +168,10 @@
                 data-amount="{{ r.so_tien_nhuan_but_text or 'Chưa có' }}"
                 data-email="{{ r.don_vi_email or 'Chưa có' }}"
                 data-phone="{{ r.don_vi_dien_thoai or 'Chưa có' }}">
-              <td><strong style="color: var(--primary-700);">{{ r.contract_no }}</strong></td>
+              <td><strong style="color: var(--primary-700);" data-copy="{{ r.contract_no }}">{{ r.contract_no }}</strong></td>
               <td>
                 {% if r.annex_no %}
-                  <span class="badge badge-teal">PL {{ r.annex_no }}</span>
+                  <span class="badge badge-teal" data-copy="{{ r.annex_no }}">PL {{ r.annex_no }}</span>
                 {% else %}
                   <span style="color: var(--text-tertiary);">-</span>
                 {% endif %}
@@ -190,7 +191,7 @@
               <td><span style="color: var(--text-secondary); font-size: var(--text-sm);">{{ r.ngay_ky_phu_luc or r.ngay_lap_hop_dong or '-' }}</span></td>
               <td>
                 {% if r.so_tien_nhuan_but_text %}
-                  <span style="color: var(--secondary-700); font-weight: var(--font-semibold);">{{ r.so_tien_nhuan_but_text }}</span>
+                  <span style="color: var(--secondary-700); font-weight: var(--font-semibold);" data-copy="{{ r.so_tien_nhuan_but_text }}">{{ r.so_tien_nhuan_but_text }}</span>
                   <span style="color: var(--text-tertiary); font-size: var(--text-xs);"> VNĐ</span>
                 {% else %}
                   <span style="color: var(--text-tertiary);">-</span>
