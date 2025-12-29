@@ -18,6 +18,7 @@ from app.config import (
     ANNEX_CATALOGUE_TEMPLATE_PATH,
     CATALOGUE_TEMPLATE_PATH,
     DOCX_TEMPLATE_PATH,
+    STORAGE_DIR,
     STORAGE_DOCX_DIR,
     STORAGE_EXCEL_DIR,
     UI_STATIC_DIR,
@@ -36,9 +37,14 @@ from app.services.excel_store import (
     read_contracts,
     update_contract_row,
 )
+from app.services.safety import audit_log, safe_move_to_backup, safe_replace_bytes
 
 
 app = FastAPI()
+
+
+_BACKUPS_DIR = STORAGE_DIR / "backups"
+_LOGS_DIR = STORAGE_DIR / "logs"
 
 
 @app.get("/debug/contracts")
@@ -60,6 +66,107 @@ def debug_contracts(year: int | None = None):
             "sample": sample,
         }
     )
+
+
+@app.get("/catalogue/upload", response_class=HTMLResponse)
+def catalogue_upload_form(
+    request: Request,
+    year: int | None = None,
+    contract_no: str | None = None,
+    annex_no: str | None = None,
+    error: str | None = None,
+    message: str | None = None,
+):
+    y = _pick_year(year or (_year_from_contract_no(contract_no or "") if contract_no else None))
+    return templates.TemplateResponse(
+        "catalogue_upload.html",
+        {
+            "request": request,
+            "title": "Upload danh mục Excel",
+            "year": y,
+            "contract_no": contract_no or "",
+            "annex_no": annex_no or "",
+            "error": error,
+            "message": message,
+            "breadcrumbs": get_breadcrumbs(request.url.path),
+        },
+    )
+
+
+@app.post("/catalogue/upload")
+async def catalogue_upload_submit(
+    request: Request,
+    year: int = Form(...),
+    contract_no: str = Form(...),
+    annex_no: str = Form(""),
+    catalogue_file: UploadFile = File(...),
+):
+    try:
+        if not catalogue_file.filename or not catalogue_file.filename.lower().endswith(".xlsx"):
+            raise ValueError("File danh mục phải là .xlsx")
+
+        # Validate target record exists before writing file
+        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
+        target_annex_no = annex_no.strip() or None
+        existing_rows = read_contracts(excel_path=excel_path)
+        found_target = False
+        for r in existing_rows:
+            if r.get("contract_no") != contract_no:
+                continue
+            if target_annex_no is None:
+                if not r.get("annex_no"):
+                    found_target = True
+                    break
+            else:
+                if r.get("annex_no") == target_annex_no:
+                    found_target = True
+                    break
+        if not found_target:
+            raise ValueError("Không tìm thấy hợp đồng/phụ lục để cập nhật catalogue_path")
+
+        data = await catalogue_file.read()
+        if data is None or len(data) == 0:
+            raise ValueError("File upload rỗng")
+        if len(data) > 25 * 1024 * 1024:
+            raise ValueError("File upload quá lớn (tối đa 25MB)")
+
+        out_dir = STORAGE_EXCEL_DIR / str(year)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / Path(catalogue_file.filename).name
+        safe_replace_bytes(out_path, data, backup_dir=_BACKUPS_DIR / "files")
+
+        success = update_contract_row(
+            excel_path=excel_path,
+            contract_no=contract_no,
+            annex_no=target_annex_no,
+            updated_data={"catalogue_path": str(out_path)},
+        )
+        if not success:
+            raise ValueError("Không tìm thấy hợp đồng/phụ lục để cập nhật catalogue_path")
+
+        audit_log(
+            log_dir=_LOGS_DIR,
+            event={
+                "action": "catalogue.upload",
+                "ip": getattr(getattr(request, "client", None), "host", None),
+                "year": year,
+                "contract_no": contract_no,
+                "annex_no": target_annex_no,
+                "file": out_path.name,
+                "bytes": len(data),
+            },
+        )
+
+        return RedirectResponse(
+            url=f"/catalogue/upload?year={year}&contract_no={contract_no}&annex_no={annex_no}&message=Đã upload danh mục và cập nhật dữ liệu",
+            status_code=303,
+        )
+    except Exception as e:
+        msg = f"{type(e).__name__}: {e}" if str(e) else f"{type(e).__name__}"
+        return RedirectResponse(
+            url=f"/catalogue/upload?year={year}&contract_no={contract_no}&annex_no={annex_no}&error={msg}",
+            status_code=303,
+        )
 
 
 def _pick_year(year: int | None) -> int:
@@ -362,6 +469,11 @@ async def works_import_submit(
 ):
     try:
         data = await import_file.read()
+        if data is None or len(data) == 0:
+            raise ValueError("File import rỗng")
+        if len(data) > 25 * 1024 * 1024:
+            raise ValueError("File import quá lớn (tối đa 25MB)")
+
         wb = load_workbook(filename=BytesIO(data), data_only=False)
         ws = wb[wb.sheetnames[0]]
 
@@ -479,9 +591,34 @@ async def works_import_submit(
         out_path = STORAGE_EXCEL_DIR / f"works_contract_{year}.xlsx"
         append_works_rows(excel_path=out_path, rows=out_rows)
 
+        audit_log(
+            log_dir=_LOGS_DIR,
+            event={
+                "action": "works.import",
+                "ip": getattr(getattr(request, "client", None), "host", None),
+                "year": year,
+                "contract_no": contract_no,
+                "annex_no": annex_no or "",
+                "rows": len(out_rows),
+                "works_excel": out_path.name,
+            },
+        )
+
         # If uploaded file matches existing catalogue, replace it with the updated version
         if existing_catalogue_path:
-            existing_catalogue_path.write_bytes(data)
+            safe_replace_bytes(existing_catalogue_path, data, backup_dir=_BACKUPS_DIR / "files")
+            audit_log(
+                log_dir=_LOGS_DIR,
+                event={
+                    "action": "catalogue.replace_from_works_import",
+                    "ip": getattr(getattr(request, "client", None), "host", None),
+                    "year": year,
+                    "contract_no": contract_no,
+                    "annex_no": annex_no or "",
+                    "file": existing_catalogue_path.name,
+                    "bytes": len(data),
+                },
+            )
             return RedirectResponse(
                 url=f"/works/import?message=Đã import {len(out_rows)} dòng vào {out_path.name} và cập nhật file danh mục {uploaded_filename}",
                 status_code=303,
@@ -765,6 +902,13 @@ def create_contract(
         year = payload.ngay_lap_hop_dong.year
         contract_no = f"{payload.so_hop_dong_4}/{year}/{REGION_CODE}/{FIELD_CODE}"
 
+        # Prevent duplicates
+        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
+        existing = read_contracts(excel_path=excel_path)
+        for r in existing:
+            if r.get("contract_no") == contract_no and not r.get("annex_no"):
+                raise ValueError("Số hợp đồng đã tồn tại")
+
         # Legacy money fields kept for compatibility (treat as total)
         money_value = total_value
         money_text = total_text
@@ -856,7 +1000,6 @@ def create_contract(
         )
 
         # Append Excel
-        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
         record = ContractRecord(
             contract_no=contract_no,
             contract_year=year,
@@ -887,8 +1030,21 @@ def create_contract(
             so_tien_text=format_money_number(total_value) if total_value is not None else "",
             so_tien_bang_chu=total_words,
             docx_path=str(out_docx_path),
+            catalogue_path=str(out_catalogue_path),
         )
         append_contract_row(excel_path=excel_path, record=record)
+
+        audit_log(
+            log_dir=_LOGS_DIR,
+            event={
+                "action": "contracts.create",
+                "ip": getattr(getattr(request, "client", None), "host", None),
+                "year": year,
+                "contract_no": contract_no,
+                "docx": out_docx_path.name,
+                "catalogue": out_catalogue_path.name,
+            },
+        )
 
         return RedirectResponse(
             url=(
@@ -907,7 +1063,7 @@ def create_contract(
 
 @app.get("/api/contracts")
 def api_contracts_list(year: int | None = None, q: str | None = None):
-    y = year or date.today().year
+    y = _pick_year(year)
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
     rows = read_contracts(excel_path=excel_path)
 
@@ -942,13 +1098,19 @@ def contracts_list(request: Request, response: Response, year: int | None = None
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
 
-    y = year or date.today().year
+    y = _pick_year(year)
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
 
     rows = read_contracts(excel_path=excel_path)
 
     # Filter: only show contracts (annex_no is empty)
     contracts = [r for r in rows if not r.get("annex_no")]
+
+    catalogue_filter = (request.query_params.get("catalogue") or "all").strip().lower()
+    if catalogue_filter in ("yes", "has", "1", "true"):
+        contracts = [r for r in contracts if r.get("catalogue_path")]
+    elif catalogue_filter in ("no", "none", "0", "false"):
+        contracts = [r for r in contracts if not r.get("catalogue_path")]
 
     # Calculate statistics
     total_contracts = len(contracts)
@@ -985,6 +1147,16 @@ def contracts_list(request: Request, response: Response, year: int | None = None
         contract_no = r.get("contract_no")
         r["annex_count"] = len([a for a in annexes if a.get("contract_no") == contract_no])
 
+        catalogue_path = r.get("catalogue_path")
+        if isinstance(catalogue_path, str) and catalogue_path.strip():
+            p = Path(catalogue_path)
+            if p.exists():
+                r["catalogue_download_url"] = f"/download_excel/{y}/{p.name}"
+            else:
+                r["catalogue_download_url"] = None
+        else:
+            r["catalogue_download_url"] = None
+
     stats = {
         "total_contracts": total_contracts,
         "total_value": total_value,
@@ -1001,6 +1173,7 @@ def contracts_list(request: Request, response: Response, year: int | None = None
             "stats": stats,
             "download": download,
             "download2": download2,
+            "catalogue_filter": catalogue_filter,
             "breadcrumbs": get_breadcrumbs(request.url.path),
         },
     )
@@ -1012,13 +1185,19 @@ def annexes_list(request: Request, response: Response, year: int | None = None, 
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
 
-    y = year or date.today().year
+    y = _pick_year(year)
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
 
     rows = read_contracts(excel_path=excel_path)
 
     # Filter: only show annexes (annex_no is not empty)
     annexes = [r for r in rows if r.get("annex_no")]
+
+    catalogue_filter = (request.query_params.get("catalogue") or "all").strip().lower()
+    if catalogue_filter in ("yes", "has", "1", "true"):
+        annexes = [r for r in annexes if r.get("catalogue_path")]
+    elif catalogue_filter in ("no", "none", "0", "false"):
+        annexes = [r for r in annexes if not r.get("catalogue_path")]
 
     # Get base contracts for reference
     contracts = [r for r in rows if not r.get("annex_no")]
@@ -1075,6 +1254,16 @@ def annexes_list(request: Request, response: Response, year: int | None = None, 
         else:
             r["parent_contract"] = None
 
+        catalogue_path = r.get("catalogue_path")
+        if isinstance(catalogue_path, str) and catalogue_path.strip():
+            p = Path(catalogue_path)
+            if p.exists():
+                r["catalogue_download_url"] = f"/download_excel/{y}/{p.name}"
+            else:
+                r["catalogue_download_url"] = None
+        else:
+            r["catalogue_download_url"] = None
+
     stats = {
         "total_annexes": total_annexes,
         "total_value": total_value,
@@ -1092,6 +1281,7 @@ def annexes_list(request: Request, response: Response, year: int | None = None, 
             "rows": annexes,
             "stats": stats,
             "download": download,
+            "catalogue_filter": catalogue_filter,
             "breadcrumbs": get_breadcrumbs(request.url.path),
         },
     )
@@ -1270,6 +1460,18 @@ def update_contract(
         )
 
         if success:
+            audit_log(
+                log_dir=_LOGS_DIR,
+                event={
+                    "action": "contracts.update",
+                    "ip": getattr(getattr(request, "client", None), "host", None),
+                    "year": year,
+                    "contract_no": contract_no,
+                    "updated_keys": sorted([k for k in updated_data.keys()]),
+                },
+            )
+
+        if success:
             return RedirectResponse(url=f"/contracts?year={year}", status_code=303)
         else:
             return RedirectResponse(url=f"/contracts?year={year}&error=Update failed", status_code=303)
@@ -1280,11 +1482,11 @@ def update_contract(
 
 
 @app.post("/contracts/{year}/delete")
-def delete_contract(year: int, contract_no: str):
+def delete_contract(request: Request, year: int, contract_no: str):
     try:
         excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
 
-        # Delete associated DOCX file
+        # Delete associated files (move to backup instead of permanent delete)
         rows = read_contracts(excel_path=excel_path)
         for r in rows:
             if r.get("contract_no") == contract_no and not r.get("annex_no"):
@@ -1292,10 +1494,27 @@ def delete_contract(year: int, contract_no: str):
                 if docx_path and isinstance(docx_path, str):
                     p = Path(docx_path)
                     if p.exists():
-                        p.unlink()
+                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
+
+                catalogue_path = r.get("catalogue_path")
+                if catalogue_path and isinstance(catalogue_path, str):
+                    p = Path(catalogue_path)
+                    if p.exists():
+                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
                 break
 
         success = delete_contract_row(excel_path=excel_path, contract_no=contract_no, annex_no=None)
+
+        if success:
+            audit_log(
+                log_dir=_LOGS_DIR,
+                event={
+                    "action": "contracts.delete",
+                    "ip": getattr(getattr(request, "client", None), "host", None),
+                    "year": year,
+                    "contract_no": contract_no,
+                },
+            )
 
         if success:
             return JSONResponse({"success": True, "message": "Đã xóa hợp đồng"})
@@ -1307,11 +1526,11 @@ def delete_contract(year: int, contract_no: str):
 
 
 @app.post("/annexes/{year}/delete")
-def delete_annex(year: int, contract_no: str, annex_no: str):
+def delete_annex(request: Request, year: int, contract_no: str, annex_no: str):
     try:
         excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
 
-        # Delete associated DOCX and Excel files
+        # Delete associated files (move to backup instead of permanent delete)
         rows = read_contracts(excel_path=excel_path)
         for r in rows:
             if r.get("contract_no") == contract_no and r.get("annex_no") == annex_no:
@@ -1320,17 +1539,29 @@ def delete_annex(year: int, contract_no: str, annex_no: str):
                 if docx_path and isinstance(docx_path, str):
                     p = Path(docx_path)
                     if p.exists():
-                        p.unlink()
+                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
 
                 # Delete catalogue Excel if exists
                 catalogue_path = r.get("catalogue_path")
                 if catalogue_path and isinstance(catalogue_path, str):
                     p = Path(catalogue_path)
                     if p.exists():
-                        p.unlink()
+                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
                 break
 
         success = delete_contract_row(excel_path=excel_path, contract_no=contract_no, annex_no=annex_no)
+
+        if success:
+            audit_log(
+                log_dir=_LOGS_DIR,
+                event={
+                    "action": "annexes.delete",
+                    "ip": getattr(getattr(request, "client", None), "host", None),
+                    "year": year,
+                    "contract_no": contract_no,
+                    "annex_no": annex_no,
+                },
+            )
 
         if success:
             return JSONResponse({"success": True, "message": f"Đã xóa phụ lục {annex_no}"})
@@ -1395,6 +1626,13 @@ def create_annex(
             year = date.today().year
 
         contracts = read_contracts(excel_path=STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx")
+
+        # Prevent duplicate annex_no for the same contract
+        if so_phu_luc:
+            for r in contracts:
+                if r.get("contract_no") == contract_no and r.get("annex_no") == so_phu_luc:
+                    raise ValueError("Số phụ lục đã tồn tại")
+
         contract_row: dict | None = None
         for r in contracts:
             if r.get("contract_no") == contract_no:
@@ -1624,8 +1862,22 @@ def create_annex(
             so_tien_text=format_money_vnd(total_value) if total_value else None,
             so_tien_bang_chu=total_words if total_words else None,
             docx_path=str(out_docx_path),
+            catalogue_path=str(out_catalogue_path),
         )
         append_contract_row(excel_path=contracts_excel_path, record=annex_record)
+
+        audit_log(
+            log_dir=_LOGS_DIR,
+            event={
+                "action": "annexes.create",
+                "ip": getattr(getattr(request, "client", None), "host", None),
+                "year": year,
+                "contract_no": contract_no,
+                "annex_no": so_phu_luc,
+                "docx": out_docx_path.name,
+                "catalogue": out_catalogue_path.name,
+            },
+        )
 
         return RedirectResponse(
             url=(

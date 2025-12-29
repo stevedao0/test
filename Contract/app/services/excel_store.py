@@ -10,7 +10,9 @@ from typing import Iterable
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
+from app.config import STORAGE_DIR
 from app.models import ContractRecord
+from app.services.safety import audit_log, backup_file, file_lock
 
 
 HEADERS = [
@@ -48,6 +50,7 @@ HEADERS = [
     "so_tien_text",
     "so_tien_bang_chu",
     "docx_path",
+    "catalogue_path",
 ]
 
 
@@ -81,6 +84,11 @@ WORKS_HEADERS = [
 
 
 _WORKS_FONT = Font(name="Times New Roman", size=12)
+
+
+_BACKUPS_DIR = STORAGE_DIR / "backups"
+_LOGS_DIR = STORAGE_DIR / "logs"
+_LOCKS_DIR = STORAGE_DIR / "locks"
 
 
 def _apply_works_font(ws, *, row: int, max_col: int) -> None:
@@ -165,14 +173,26 @@ def _ensure_works_workbook(path: Path) -> None:
 
 def append_works_rows(*, excel_path: Path, rows: list[dict]) -> None:
     _ensure_works_workbook(excel_path)
-    wb = load_workbook(str(excel_path))
-    ws = wb["Works"]
+    lock_path = _LOCKS_DIR / (excel_path.name + ".lock")
+    with file_lock(lock_path):
+        backup_file(excel_path, backup_dir=_BACKUPS_DIR / "excel")
+        wb = load_workbook(str(excel_path))
+        ws = wb["Works"]
 
-    for r in rows:
-        ws.append([r.get(h) for h in WORKS_HEADERS])
-        _apply_works_font(ws, row=ws.max_row, max_col=len(WORKS_HEADERS))
+        for r in rows:
+            ws.append([r.get(h) for h in WORKS_HEADERS])
+            _apply_works_font(ws, row=ws.max_row, max_col=len(WORKS_HEADERS))
 
-    wb.save(str(excel_path))
+        wb.save(str(excel_path))
+
+    audit_log(
+        log_dir=_LOGS_DIR,
+        event={
+            "action": "works.append_rows",
+            "excel_path": str(excel_path),
+            "rows": len(rows),
+        },
+    )
 
 
 def _rebuild_contracts_workbook(path: Path) -> None:
@@ -260,31 +280,44 @@ def _ensure_workbook(path: Path) -> None:
 def append_contract_row(*, excel_path: Path, record: ContractRecord) -> None:
     _ensure_workbook(excel_path)
 
-    wb = load_workbook(str(excel_path))
-    ws = wb["Contracts"]
+    lock_path = _LOCKS_DIR / (excel_path.name + ".lock")
+    with file_lock(lock_path):
+        backup_file(excel_path, backup_dir=_BACKUPS_DIR / "excel")
+        wb = load_workbook(str(excel_path))
+        ws = wb["Contracts"]
 
-    row = []
-    data = record.model_dump()
-    for h in HEADERS:
-        v = data.get(h)
-        row.append(v)
+        row = []
+        data = record.model_dump()
+        for h in HEADERS:
+            v = data.get(h)
+            row.append(v)
 
-    ws.append(row)
+        ws.append(row)
 
-    # Set date format for ngay_lap_hop_dong column (dd/mm/yyyy)
-    row_num = ws.max_row
-    date_col_idx = None
-    for idx, header in enumerate(HEADERS, start=1):
-        if header == "ngay_lap_hop_dong":
-            date_col_idx = idx
-            break
+        # Set date format for ngay_lap_hop_dong column (dd/mm/yyyy)
+        row_num = ws.max_row
+        date_col_idx = None
+        for idx, header in enumerate(HEADERS, start=1):
+            if header == "ngay_lap_hop_dong":
+                date_col_idx = idx
+                break
 
-    if date_col_idx:
-        cell = ws.cell(row=row_num, column=date_col_idx)
-        if cell.value:
-            cell.number_format = "dd/mm/yyyy"
+        if date_col_idx:
+            cell = ws.cell(row=row_num, column=date_col_idx)
+            if cell.value:
+                cell.number_format = "dd/mm/yyyy"
 
-    wb.save(str(excel_path))
+        wb.save(str(excel_path))
+    audit_log(
+        log_dir=_LOGS_DIR,
+        event={
+            "action": "contracts.append_row",
+            "excel_path": str(excel_path),
+            "contract_no": record.contract_no,
+            "annex_no": record.annex_no,
+            "year": record.contract_year,
+        },
+    )
 
 
 def read_contracts(*, excel_path: Path) -> list[dict]:
@@ -324,53 +357,71 @@ def update_contract_row(*, excel_path: Path, contract_no: str, annex_no: str | N
     if not excel_path.exists():
         return False
 
-    wb = load_workbook(str(excel_path))
-    ws = wb["Contracts"]
+    lock_path = _LOCKS_DIR / (excel_path.name + ".lock")
+    with file_lock(lock_path):
+        backup_file(excel_path, backup_dir=_BACKUPS_DIR / "excel")
+        wb = load_workbook(str(excel_path))
+        ws = wb["Contracts"]
 
-    rows = list(ws.iter_rows(values_only=True))
-    if not rows:
-        return False
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            wb.close()
+            return False
 
-    raw_headers = list(rows[0])
-    headers: list[str | None] = []
-    for h in raw_headers:
-        if isinstance(h, str) and h.strip():
-            headers.append(h.strip())
-        else:
-            headers.append(None)
-
-    contract_no_idx = None
-    annex_no_idx = None
-    for i, h in enumerate(headers):
-        if h == "contract_no":
-            contract_no_idx = i
-        if h == "annex_no":
-            annex_no_idx = i
-
-    if contract_no_idx is None:
-        return False
-
-    found = False
-    for row_idx in range(2, ws.max_row + 1):
-        row_contract_no = ws.cell(row=row_idx, column=contract_no_idx + 1).value
-        row_annex_no = ws.cell(row=row_idx, column=annex_no_idx + 1).value if annex_no_idx is not None else None
-
-        if row_contract_no == contract_no:
-            if annex_no is None:
-                if not row_annex_no:
-                    found = True
+        raw_headers = list(rows[0])
+        headers: list[str | None] = []
+        for h in raw_headers:
+            if isinstance(h, str) and h.strip():
+                headers.append(h.strip())
             else:
-                if row_annex_no == annex_no:
-                    found = True
+                headers.append(None)
 
-            if found:
-                for header_idx, header in enumerate(headers):
-                    if header and header in updated_data:
-                        ws.cell(row=row_idx, column=header_idx + 1, value=updated_data[header])
-                break
+        contract_no_idx = None
+        annex_no_idx = None
+        for i, h in enumerate(headers):
+            if h == "contract_no":
+                contract_no_idx = i
+            if h == "annex_no":
+                annex_no_idx = i
+
+        if contract_no_idx is None:
+            wb.close()
+            return False
+
+        found = False
+        for row_idx in range(2, ws.max_row + 1):
+            row_contract_no = ws.cell(row=row_idx, column=contract_no_idx + 1).value
+            row_annex_no = ws.cell(row=row_idx, column=annex_no_idx + 1).value if annex_no_idx is not None else None
+
+            if row_contract_no == contract_no:
+                if annex_no is None:
+                    if not row_annex_no:
+                        found = True
+                else:
+                    if row_annex_no == annex_no:
+                        found = True
+
+                if found:
+                    for header_idx, header in enumerate(headers):
+                        if header and header in updated_data:
+                            ws.cell(row=row_idx, column=header_idx + 1, value=updated_data[header])
+                    break
+
+        if found:
+            wb.save(str(excel_path))
+        wb.close()
 
     if found:
-        wb.save(str(excel_path))
+        audit_log(
+            log_dir=_LOGS_DIR,
+            event={
+                "action": "contracts.update_row",
+                "excel_path": str(excel_path),
+                "contract_no": contract_no,
+                "annex_no": annex_no,
+                "updated_keys": sorted([k for k in updated_data.keys()]),
+            },
+        )
     return found
 
 
@@ -378,50 +429,69 @@ def delete_contract_row(*, excel_path: Path, contract_no: str, annex_no: str | N
     if not excel_path.exists():
         return False
 
-    wb = load_workbook(str(excel_path))
-    ws = wb["Contracts"]
+    lock_path = _LOCKS_DIR / (excel_path.name + ".lock")
+    with file_lock(lock_path):
+        backup_file(excel_path, backup_dir=_BACKUPS_DIR / "excel")
+        wb = load_workbook(str(excel_path))
+        ws = wb["Contracts"]
 
-    rows = list(ws.iter_rows(values_only=True))
-    if not rows:
-        return False
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
+            wb.close()
+            return False
 
-    raw_headers = list(rows[0])
-    headers: list[str | None] = []
-    for h in raw_headers:
-        if isinstance(h, str) and h.strip():
-            headers.append(h.strip())
-        else:
-            headers.append(None)
-
-    contract_no_idx = None
-    annex_no_idx = None
-    for i, h in enumerate(headers):
-        if h == "contract_no":
-            contract_no_idx = i
-        if h == "annex_no":
-            annex_no_idx = i
-
-    if contract_no_idx is None:
-        return False
-
-    row_to_delete = None
-    for row_idx in range(2, ws.max_row + 1):
-        row_contract_no = ws.cell(row=row_idx, column=contract_no_idx + 1).value
-        row_annex_no = ws.cell(row=row_idx, column=annex_no_idx + 1).value if annex_no_idx is not None else None
-
-        if row_contract_no == contract_no:
-            if annex_no is None:
-                if not row_annex_no:
-                    row_to_delete = row_idx
-                    break
+        raw_headers = list(rows[0])
+        headers: list[str | None] = []
+        for h in raw_headers:
+            if isinstance(h, str) and h.strip():
+                headers.append(h.strip())
             else:
-                if row_annex_no == annex_no:
-                    row_to_delete = row_idx
-                    break
+                headers.append(None)
 
-    if row_to_delete:
-        ws.delete_rows(row_to_delete)
-        wb.save(str(excel_path))
+        contract_no_idx = None
+        annex_no_idx = None
+        for i, h in enumerate(headers):
+            if h == "contract_no":
+                contract_no_idx = i
+            if h == "annex_no":
+                annex_no_idx = i
+
+        if contract_no_idx is None:
+            wb.close()
+            return False
+
+        row_to_delete = None
+        for row_idx in range(2, ws.max_row + 1):
+            row_contract_no = ws.cell(row=row_idx, column=contract_no_idx + 1).value
+            row_annex_no = ws.cell(row=row_idx, column=annex_no_idx + 1).value if annex_no_idx is not None else None
+
+            if row_contract_no == contract_no:
+                if annex_no is None:
+                    if not row_annex_no:
+                        row_to_delete = row_idx
+                        break
+                else:
+                    if row_annex_no == annex_no:
+                        row_to_delete = row_idx
+                        break
+
+        deleted = False
+        if row_to_delete:
+            ws.delete_rows(row_to_delete)
+            wb.save(str(excel_path))
+            deleted = True
+        wb.close()
+
+    if deleted:
+        audit_log(
+            log_dir=_LOGS_DIR,
+            event={
+                "action": "contracts.delete_row",
+                "excel_path": str(excel_path),
+                "contract_no": contract_no,
+                "annex_no": annex_no,
+            },
+        )
         return True
     return False
 

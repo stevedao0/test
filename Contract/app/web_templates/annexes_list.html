@@ -85,6 +85,13 @@
           style="width: 120px; border: 2px solid var(--teal-300);"
         />
       </div>
+      <div class="form-group" style="margin: 0;">
+        <select name="catalogue" class="form-input" style="width: 200px; border: 2px solid var(--primary-200);">
+          <option value="all" {% if catalogue_filter == 'all' %}selected{% endif %}>Tất cả danh mục</option>
+          <option value="yes" {% if catalogue_filter in ['yes','has','1','true'] %}selected{% endif %}>Có danh mục</option>
+          <option value="no" {% if catalogue_filter in ['no','none','0','false'] %}selected{% endif %}>Chưa có danh mục</option>
+        </select>
+      </div>
       <button class="btn btn-info" type="submit">
         <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -214,6 +221,20 @@
                       </a>
                       <div class="dropdown-divider"></div>
                     {% endif %}
+                    {% if r.catalogue_download_url %}
+                      <a class="dropdown-item" href="{{ r.catalogue_download_url }}">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Tải danh mục
+                      </a>
+                    {% endif %}
+                    <a class="dropdown-item" href="/catalogue/upload?year={{ year }}&contract_no={{ r.contract_no|urlencode }}&annex_no={{ r.annex_no|urlencode }}">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      Upload danh mục
+                    </a>
                     <button class="dropdown-item dropdown-item-danger" onclick="deleteAnnex('{{ year }}', '{{ r.contract_no }}', '{{ r.annex_no }}')">
                       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

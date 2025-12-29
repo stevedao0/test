@@ -74,3 +74,4 @@ class ContractRecord(BaseModel):
     so_tien_bang_chu: Optional[str] = None
 
     docx_path: str
+    catalogue_path: Optional[str] = None
