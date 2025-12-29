@@ -260,18 +260,18 @@
 
 <style>
 .btn-danger {
-  background: var(--danger, #ef4444);
+  background: var(--error-600);
   color: white;
 }
 
 .btn-danger:hover {
-  background: #dc2626;
+  background: var(--error-700);
 }
 
 .annex-tooltip {
   position: absolute;
   background: white;
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--neutral-200);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -299,7 +299,7 @@
   display: flex;
   justify-content: space-between;
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--neutral-100);
   font-size: var(--text-sm);
 }
 
@@ -336,7 +336,7 @@
   top: 100%;
   margin-top: var(--space-2);
   background: white;
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--neutral-200);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 180px;
@@ -365,7 +365,7 @@
 }
 
 .dropdown-item:hover {
-  background: var(--gray-50);
+  background: var(--neutral-50);
 }
 
 .dropdown-item .icon {
@@ -375,16 +375,16 @@
 }
 
 .dropdown-item-danger {
-  color: var(--danger);
+  color: var(--error-600);
 }
 
 .dropdown-item-danger:hover {
-  background: var(--danger-50);
+  background: var(--error-50);
 }
 
 .dropdown-divider {
   height: 1px;
-  background: var(--gray-200);
+  background: var(--neutral-200);
   margin: var(--space-1) 0;
 }
 </style>
@@ -498,7 +498,7 @@ document.addEventListener('click', function(e) {
       </div>
       <div class="annex-tooltip-row">
         <span class="annex-tooltip-label">Nhuận bút:</span>
-        <span class="annex-tooltip-value" style="color: var(--success-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
+        <span class="annex-tooltip-value" style="color: var(--secondary-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
       </div>
     `;
 

@@ -487,18 +487,18 @@
 }
 
 .btn-danger {
-  background: var(--danger, #ef4444);
+  background: var(--error-600);
   color: white;
 }
 
 .btn-danger:hover {
-  background: #dc2626;
+  background: var(--error-700);
 }
 
 .contract-tooltip {
   position: absolute;
   background: white;
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--neutral-200);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -526,7 +526,7 @@
   display: flex;
   justify-content: space-between;
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--neutral-100);
   font-size: var(--text-sm);
 }
 
@@ -563,7 +563,7 @@
   top: 100%;
   margin-top: var(--space-2);
   background: white;
-  border: 1px solid var(--gray-200);
+  border: 1px solid var(--neutral-200);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 180px;
@@ -592,7 +592,7 @@
 }
 
 .dropdown-item:hover {
-  background: var(--gray-50);
+  background: var(--neutral-50);
 }
 
 .dropdown-item .icon {
@@ -602,16 +602,16 @@
 }
 
 .dropdown-item-danger {
-  color: var(--danger);
+  color: var(--error-600);
 }
 
 .dropdown-item-danger:hover {
-  background: var(--danger-50);
+  background: var(--error-50);
 }
 
 .dropdown-divider {
   height: 1px;
-  background: var(--gray-200);
+  background: var(--neutral-200);
   margin: var(--space-1) 0;
 }
 </style>
@@ -634,7 +634,7 @@ function viewContract(year, contractNo) {
     .then(res => res.json())
     .then(data => {
       if (data.error) {
-        content.innerHTML = `<div style="color: var(--danger); text-align: center;">${data.error}</div>`;
+        content.innerHTML = `<div style="color: var(--error-600); text-align: center;">${data.error}</div>`;
         return;
       }
 
@@ -730,7 +730,7 @@ function viewContract(year, contractNo) {
       `;
     })
     .catch(err => {
-      content.innerHTML = `<div style="color: var(--danger); text-align: center;">Lỗi: ${err.message}</div>`;
+      content.innerHTML = `<div style="color: var(--error-600); text-align: center;">Lỗi: ${err.message}</div>`;
     });
 }
 
@@ -837,7 +837,7 @@ function showSavedFiles() {
     })
     .catch(err => {
       content.innerHTML = `
-        <div style="text-align: center; padding: 3rem; color: var(--danger);">
+        <div style="text-align: center; padding: 3rem; color: var(--error-600);">
           <p>Lỗi: ${err.message}</p>
         </div>
       `;
@@ -940,7 +940,7 @@ document.addEventListener('click', function(e) {
       </div>
       <div class="contract-tooltip-row">
         <span class="contract-tooltip-label">Nhuận bút:</span>
-        <span class="contract-tooltip-value" style="color: var(--success-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
+        <span class="contract-tooltip-value" style="color: var(--secondary-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
       </div>
     `;
 
