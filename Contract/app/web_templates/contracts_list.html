@@ -1,0 +1,987 @@
+{% extends "base.html" %}
+{% block content %}
+{% if download %}
+  <iframe src="{{ download }}" style="display:none" aria-hidden="true"></iframe>
+{% endif %}
+{% if download2 %}
+  <iframe src="{{ download2 }}" style="display:none" aria-hidden="true"></iframe>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-6);">
+  <div class="card" style="border-left: 4px solid var(--primary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--primary-50) 100%); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <span class="badge badge-blue" style="font-size: var(--text-sm); padding: 6px 14px;">📅 {{ year }}</span>
+      </div>
+      <div class="stats-value" style="font-size: var(--text-4xl); color: var(--primary-700); margin-bottom: var(--space-2);">{{ stats.total_contracts }}</div>
+      <div class="stats-label" style="color: var(--text-secondary);">Tổng số hợp đồng</div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--secondary-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--secondary-50) 100%); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--secondary-500), var(--secondary-700)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <span class="badge badge-green" style="font-size: var(--text-sm); padding: 6px 14px;">💰 VNĐ</span>
+      </div>
+      <div class="stats-value" style="font-size: var(--text-3xl); color: var(--secondary-700); margin-bottom: var(--space-2);">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
+      <div class="stats-label" style="color: var(--text-secondary);">Tổng giá trị</div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--teal-500); background: linear-gradient(135deg, #FFFFFF 0%, var(--teal-50) 100%); position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(20, 184, 166, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--teal-500), var(--teal-700)); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <span class="badge badge-teal" style="font-size: var(--text-sm); padding: 6px 14px;">📎 Phụ lục</span>
+      </div>
+      <div class="stats-value" style="font-size: var(--text-4xl); color: var(--teal-700); margin-bottom: var(--space-2);">{{ stats.contracts_with_annexes }}</div>
+      <div class="stats-label" style="color: var(--text-secondary);">HĐ có phụ lục</div>
+      <div style="margin-top: var(--space-4);">
+        <div class="progress-bar-container" style="height: 10px; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);">
+          <div class="progress-bar" style="width: {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %}; background: linear-gradient(90deg, var(--teal-400), var(--teal-600)); height: 10px;"></div>
+        </div>
+        <div style="font-size: var(--text-sm); color: var(--teal-700); margin-top: var(--space-2); font-weight: var(--font-semibold);">
+          {% if stats.total_contracts > 0 %}{{ (stats.contracts_with_annexes / stats.total_contracts * 100)|int }}%{% else %}0%{% endif %} có phụ lục
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4); border-left: 4px solid var(--primary-500);">
+    <div>
+      <h1 class="card-title" style="color: var(--primary-800); display: flex; align-items: center; gap: var(--space-3);">
+        <svg style="width: 28px; height: 28px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Danh sách hợp đồng
+      </h1>
+      <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+        📊 Quản lý và theo dõi tất cả hợp đồng theo năm
+      </p>
+    </div>
+    <form style="display: flex; gap: var(--space-2); align-items: center;" method="get" action="/contracts">
+      <div class="form-group" style="margin: 0;">
+        <input
+          name="year"
+          value="{{ year }}"
+          class="form-input"
+          placeholder="Năm"
+          style="width: 120px; border: 2px solid var(--primary-300);"
+        />
+      </div>
+      <button class="btn btn-info" type="submit">
+        <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        Lọc
+      </button>
+    </form>
+  </div>
+
+  <div class="card-body">
+    <div style="margin-bottom: var(--space-4); position: relative;">
+      <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--primary-500); pointer-events: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        placeholder="🔍 Tìm kiếm theo số HĐ, đơn vị, kênh..."
+        class="form-input"
+        data-table-search="contracts-table"
+        style="max-width: 500px; padding-left: var(--space-10); border: 2px solid var(--primary-200); background: linear-gradient(135deg, white 0%, var(--primary-50) 100%);"
+      />
+    </div>
+
+    <div class="table-wrapper data-table-container" data-enhanced-table="contracts-table">
+      <table class="table" data-sortable-table>
+        <thead>
+          <tr>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                </svg>
+                Số HĐ & Lĩnh vực
+              </div>
+            </th>
+            <th data-sort="date">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--info-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Ngày lập
+              </div>
+            </th>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--purple-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Đơn vị
+              </div>
+            </th>
+            <th data-sort="text">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--pink-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Kênh phát hành
+              </div>
+            </th>
+            <th data-sort="number">
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--secondary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Giá trị
+              </div>
+            </th>
+            <th>
+              <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <svg style="width: 16px; height: 16px; color: var(--teal-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Phụ lục
+              </div>
+            </th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody data-table-body>
+          {% for r in rows %}
+            <tr class="contract-row"
+                data-contract-no="{{ r.contract_no }}"
+                data-channel="{{ r.kenh_ten or 'Chưa có' }}"
+                data-unit="{{ r.don_vi_ten or 'Chưa có' }}"
+                data-date="{{ r.ngay_lap_hop_dong or 'Chưa có' }}"
+                data-amount="{{ r.so_tien_nhuan_but_text or 'Chưa có' }}"
+                data-email="{{ r.don_vi_email or 'Chưa có' }}"
+                data-phone="{{ r.don_vi_dien_thoai or 'Chưa có' }}"
+                data-representative="{{ r.don_vi_nguoi_dai_dien or 'Chưa có' }}">
+              <td>
+                <strong style="color: var(--primary-700);">{{ r.contract_no }}</strong>
+                {% if r.linh_vuc %}
+                  {% if 'MR' in r.linh_vuc %}
+                    <span class="badge badge-purple" style="margin-left: var(--space-2);">MR</span>
+                  {% elif 'PN' in r.linh_vuc %}
+                    <span class="badge badge-indigo" style="margin-left: var(--space-2);">PN</span>
+                  {% elif 'SCTT' in r.linh_vuc %}
+                    <span class="badge badge-teal" style="margin-left: var(--space-2);">SCTT</span>
+                  {% else %}
+                    <span class="badge badge-blue" style="margin-left: var(--space-2);">{{ r.linh_vuc[:4] }}</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td><span style="color: var(--text-secondary); font-size: var(--text-sm);">{{ r.ngay_lap_hop_dong }}</span></td>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: var(--space-1);">
+                  <span style="font-weight: var(--font-medium);">{{ r.don_vi_ten }}</span>
+                  {% if r.kenh_ten %}
+                    <span style="font-size: var(--text-xs); color: var(--text-tertiary);">{{ r.kenh_ten }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                {% if r.kenh_ten %}
+                  {% if 'Youtube' in r.kenh_ten or 'YouTube' in r.kenh_ten %}
+                    <span class="badge badge-red">YouTube</span>
+                  {% elif 'Facebook' in r.kenh_ten %}
+                    <span class="badge badge-blue">Facebook</span>
+                  {% elif 'TikTok' in r.kenh_ten %}
+                    <span class="badge badge-pink">TikTok</span>
+                  {% elif 'Instagram' in r.kenh_ten %}
+                    <span class="badge badge-orange">Instagram</span>
+                  {% else %}
+                    <span class="badge badge-indigo">{{ r.kenh_ten[:15] }}</span>
+                  {% endif %}
+                {% else %}
+                  <span style="color: var(--text-tertiary);">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.so_tien_nhuan_but_text %}
+                  <span style="color: var(--secondary-700); font-weight: var(--font-semibold);">{{ r.so_tien_nhuan_but_text }}</span>
+                  <span style="color: var(--text-tertiary); font-size: var(--text-xs);"> VNĐ</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if r.annex_count > 0 %}
+                  <span class="badge badge-green">{{ r.annex_count }} PL</span>
+                {% else %}
+                  <span class="badge" style="background: var(--neutral-200); color: var(--neutral-600); border: 1px solid var(--neutral-300);">Chưa có</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="actions-dropdown">
+                  <button class="btn btn-sm btn-secondary dropdown-toggle" onclick="toggleDropdown(this, event)" title="Thao tác">
+                    <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
+                  <div class="dropdown-menu">
+                    <button class="dropdown-item" onclick="viewContract('{{ year }}', '{{ r.contract_no }}')">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      Xem chi tiết
+                    </button>
+                    <a class="dropdown-item" href="/contracts/{{ year }}/edit?contract_no={{ r.contract_no|urlencode }}">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Chỉnh sửa
+                    </a>
+                    {% if r.download_url %}
+                      <a class="dropdown-item" href="{{ r.download_url }}">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Tải xuống HĐ
+                      </a>
+                    {% endif %}
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/annexes/new?year={{ year }}&contract_no={{ r.contract_no }}">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Tạo phụ lục
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item dropdown-item-danger" onclick="deleteContract('{{ year }}', '{{ r.contract_no }}')">
+                      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Xóa hợp đồng
+                    </button>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if rows|length == 0 %}
+        <div class="empty-state">
+          <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <div class="empty-state-title">Chưa có hợp đồng</div>
+          <div class="empty-state-description">Chưa có dữ liệu cho năm {{ year }}</div>
+        </div>
+      {% endif %}
+
+      <div class="table-pagination" data-pagination-for="contracts-table"></div>
+    </div>
+  </div>
+
+  <div class="card-footer" style="display: flex; gap: var(--space-3); justify-content: flex-start; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--primary-50) 100%);">
+    <a href="/contracts/new" class="btn btn-primary">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Tạo hợp đồng mới
+    </a>
+    <a href="/annexes/new" class="btn btn-success">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Tạo phụ lục
+    </a>
+    <a href="/documents/new" class="btn btn-secondary">
+      <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Tạo tài liệu
+    </a>
+    <div style="margin-left: auto; display: flex; gap: var(--space-3);">
+      <a href="/storage/excel/download/{{ year }}" class="btn btn-info">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Tải file tổng hợp HĐ
+      </a>
+      <button class="btn btn-warning" onclick="showSavedFiles()">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+        File đã lưu
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="savedFilesModal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-header">
+      <h2>File đã lưu - Năm {{ year }}</h2>
+      <button class="modal-close" onclick="closeSavedFilesModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="savedFilesContent">
+      <div style="text-align: center; padding: 2rem;">
+        <div class="spinner"></div>
+        <p>Đang tải danh sách file...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="contractDetailModal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Chi tiết hợp đồng</h2>
+      <button class="modal-close" onclick="closeContractModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="contractDetailContent">
+      <div style="text-align: center; padding: var(--space-8);">
+        <div class="spinner"></div>
+        <p style="margin-top: var(--space-4); color: var(--text-secondary);">Đang tải...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+.modal-content {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2xl);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 90%;
+  animation: slideUp 0.3s;
+}
+
+.modal-header {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+.detail-item {
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.detail-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.detail-value {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.spinner {
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  transition: all var(--transition-base);
+}
+
+.badge:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-danger {
+  background: var(--danger, #ef4444);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.contract-tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  min-width: 350px;
+  max-width: 450px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.contract-tooltip.show {
+  opacity: 1;
+}
+
+.contract-tooltip h4 {
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--text-base);
+  color: var(--primary-700);
+  border-bottom: 2px solid var(--primary-200);
+  padding-bottom: var(--space-2);
+}
+
+.contract-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: var(--text-sm);
+}
+
+.contract-tooltip-row:last-child {
+  border-bottom: none;
+}
+
+.contract-tooltip-label {
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  flex: 0 0 40%;
+}
+
+.contract-tooltip-value {
+  color: var(--text-primary);
+  flex: 1;
+  text-align: right;
+  word-break: break-word;
+}
+
+.actions-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: var(--space-2);
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-decoration: none;
+}
+
+.dropdown-item:hover {
+  background: var(--gray-50);
+}
+
+.dropdown-item .icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.dropdown-item-danger {
+  color: var(--danger);
+}
+
+.dropdown-item-danger:hover {
+  background: var(--danger-50);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--gray-200);
+  margin: var(--space-1) 0;
+}
+</style>
+
+<script>
+function viewContract(year, contractNo) {
+  const modal = document.getElementById('contractDetailModal');
+  const content = document.getElementById('contractDetailContent');
+
+  modal.style.display = 'flex';
+  content.innerHTML = `
+    <div style="text-align: center; padding: var(--space-8);">
+      <div class="spinner"></div>
+      <p style="margin-top: var(--space-4); color: var(--text-secondary);">Đang tải...</p>
+    </div>
+  `;
+
+  const url = `/contracts/${year}/detail?contract_no=${encodeURIComponent(contractNo)}`;
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        content.innerHTML = `<div style="color: var(--danger); text-align: center;">${data.error}</div>`;
+        return;
+      }
+
+      const c = data.contract;
+      const annexes = data.annexes || [];
+
+      content.innerHTML = `
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">Số hợp đồng</div>
+            <div class="detail-value">${c.contract_no || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Ngày lập</div>
+            <div class="detail-value">${c.ngay_lap_hop_dong_display || c.ngay_lap_hop_dong || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Lĩnh vực</div>
+            <div class="detail-value">${c.linh_vuc || '-'}</div>
+          </div>
+          <div class="detail-item" style="grid-column: 1 / -1;">
+            <div class="detail-label">Đơn vị</div>
+            <div class="detail-value">${c.don_vi_ten || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Địa chỉ</div>
+            <div class="detail-value">${c.don_vi_dia_chi || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Điện thoại</div>
+            <div class="detail-value">${c.don_vi_dien_thoai || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Người đại diện</div>
+            <div class="detail-value">${c.don_vi_nguoi_dai_dien || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Chức vụ</div>
+            <div class="detail-value">${c.don_vi_chuc_vu || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">MST</div>
+            <div class="detail-value">${c.don_vi_mst || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Email</div>
+            <div class="detail-value">${c.don_vi_email || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Tên kênh</div>
+            <div class="detail-value">${c.kenh_ten || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Kênh ID</div>
+            <div class="detail-value" style="font-size: var(--text-sm); word-break: break-all;">${c.kenh_id || '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Số tiền chưa VAT</div>
+            <div class="detail-value">${c.so_tien_chua_GTGT_text ? c.so_tien_chua_GTGT_text + ' VNĐ' : '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Thuế VAT (${c.thue_percent || 10}%)</div>
+            <div class="detail-value">${c.thue_GTGT_text ? c.thue_GTGT_text + ' VNĐ' : '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Tổng tiền</div>
+            <div class="detail-value" style="color: var(--success); font-size: var(--text-lg);">${c.so_tien_text ? c.so_tien_text + ' VNĐ' : '-'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Số tiền bằng chữ</div>
+            <div class="detail-value" style="font-style: italic;">${c.so_tien_bang_chu || '-'}</div>
+          </div>
+        </div>
+
+        ${annexes.length > 0 ? `
+          <div style="margin-top: var(--space-6);">
+            <h3 style="margin-bottom: var(--space-4);">Phụ lục (${annexes.length})</h3>
+            <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+              ${annexes.map(a => `
+                <div style="padding: var(--space-3); background: var(--bg-secondary); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong>Phụ lục ${a.annex_no || '?'}</strong>
+                    <span style="color: var(--text-secondary); margin-left: var(--space-2);">
+                      ${a.so_tien_text ? a.so_tien_text + ' VNĐ' : ''}
+                    </span>
+                  </div>
+                  <span style="color: var(--text-secondary); font-size: var(--text-sm);">${a.ngay_lap_hop_dong || ''}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      `;
+    })
+    .catch(err => {
+      content.innerHTML = `<div style="color: var(--danger); text-align: center;">Lỗi: ${err.message}</div>`;
+    });
+}
+
+function closeContractModal() {
+  document.getElementById('contractDetailModal').style.display = 'none';
+}
+
+function deleteContract(year, contractNo) {
+  if (!confirm(`Bạn có chắc muốn xóa hợp đồng ${contractNo}?\n\nHành động này không thể hoàn tác!`)) {
+    return;
+  }
+
+  const url = `/contracts/${year}/delete?contract_no=${encodeURIComponent(contractNo)}`;
+  fetch(url, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        window.toast.success(data.message || 'Đã xóa hợp đồng');
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        window.toast.error(data.error || 'Xóa thất bại');
+      }
+    })
+    .catch(err => {
+      window.toast.error('Lỗi: ' + err.message);
+    });
+}
+
+document.getElementById('contractDetailModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeContractModal();
+  }
+});
+
+// Saved Files Modal
+function showSavedFiles() {
+  const modal = document.getElementById('savedFilesModal');
+  const content = document.getElementById('savedFilesContent');
+
+  modal.style.display = 'flex';
+  content.innerHTML = `
+    <div style="text-align: center; padding: 2rem;">
+      <div class="spinner"></div>
+      <p>Đang tải danh sách file...</p>
+    </div>
+  `;
+
+  fetch('/storage/files/{{ year }}')
+    .then(res => res.json())
+    .then(files => {
+      if (files.length === 0) {
+        content.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: var(--text-tertiary);">
+            <p>Chưa có file nào được lưu trong năm {{ year }}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const formatSize = (bytes) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      };
+
+      const getFileIcon = (type) => {
+        if (type === 'docx') return '📄';
+        if (type === 'xlsx') return '📊';
+        return '📁';
+      };
+
+      content.innerHTML = `
+        <div style="max-height: 500px; overflow-y: auto;">
+          <table class="table" style="margin: 0;">
+            <thead>
+              <tr>
+                <th style="width: 50px;"></th>
+                <th>Tên file</th>
+                <th style="width: 100px;">Kích thước</th>
+                <th style="width: 150px;">Ngày sửa</th>
+                <th style="width: 100px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${files.map(f => `
+                <tr>
+                  <td style="text-align: center; font-size: 24px;">${getFileIcon(f.type)}</td>
+                  <td><strong>${f.name}</strong></td>
+                  <td>${formatSize(f.size)}</td>
+                  <td style="color: var(--text-secondary); font-size: var(--text-sm);">${f.modified}</td>
+                  <td>
+                    <a href="${f.url}" class="btn btn-sm btn-success" title="Tải xuống">
+                      <svg class="icon" style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </a>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    })
+    .catch(err => {
+      content.innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: var(--danger);">
+          <p>Lỗi: ${err.message}</p>
+        </div>
+      `;
+    });
+}
+
+function closeSavedFilesModal() {
+  document.getElementById('savedFilesModal').style.display = 'none';
+}
+
+document.getElementById('savedFilesModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeSavedFilesModal();
+  }
+});
+
+// Dropdown Menu
+function toggleDropdown(button, e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+  const dropdown = button.closest('.actions-dropdown');
+  const menu = dropdown.querySelector('.dropdown-menu');
+  const isCurrentlyOpen = menu.classList.contains('show');
+
+  // Close all dropdowns first
+  document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+    m.classList.remove('show');
+  });
+
+  // Toggle current dropdown (open if it was closed)
+  if (!isCurrentlyOpen) {
+    menu.classList.add('show');
+  }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.actions-dropdown')) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+      m.classList.remove('show');
+    });
+  }
+});
+
+// Contract Row Tooltip - Using event delegation for dynamic content
+(function() {
+  const tooltip = document.createElement('div');
+  tooltip.className = 'contract-tooltip';
+  document.body.appendChild(tooltip);
+
+  let showTimeout;
+  let hideTimeout;
+  let currentRow = null;
+
+  // Use event delegation on tbody
+  document.addEventListener('mouseenter', function(e) {
+    const row = e.target.closest('.contract-row');
+    if (!row) return;
+
+    currentRow = row;
+    clearTimeout(hideTimeout);
+
+    const contractNo = row.dataset.contractNo;
+    const channel = row.dataset.channel;
+    const unit = row.dataset.unit;
+    const date = row.dataset.date;
+    const amount = row.dataset.amount;
+    const email = row.dataset.email;
+    const phone = row.dataset.phone;
+    const representative = row.dataset.representative;
+
+    tooltip.innerHTML = `
+      <h4>📋 ${contractNo}</h4>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Kênh:</span>
+        <span class="contract-tooltip-value">${channel}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Đơn vị:</span>
+        <span class="contract-tooltip-value">${unit}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Người đại diện:</span>
+        <span class="contract-tooltip-value">${representative}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Email:</span>
+        <span class="contract-tooltip-value">${email}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Điện thoại:</span>
+        <span class="contract-tooltip-value">${phone}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Ngày ký:</span>
+        <span class="contract-tooltip-value">${date}</span>
+      </div>
+      <div class="contract-tooltip-row">
+        <span class="contract-tooltip-label">Nhuận bút:</span>
+        <span class="contract-tooltip-value" style="color: var(--success-600); font-weight: var(--font-semibold);">${amount} VNĐ</span>
+      </div>
+    `;
+
+    showTimeout = setTimeout(() => {
+      const rect = row.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+
+      let left = rect.right + 10;
+      let top = rect.top + window.scrollY;
+
+      // Check if tooltip goes off-screen to the right
+      if (left + tooltipRect.width > window.innerWidth) {
+        left = rect.left - tooltipRect.width - 10;
+      }
+
+      // Check if tooltip goes off-screen at bottom
+      if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
+        top = window.innerHeight + window.scrollY - tooltipRect.height - 10;
+      }
+
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+      tooltip.classList.add('show');
+    }, 300);
+  }, true);
+
+  document.addEventListener('mouseleave', function(e) {
+    const row = e.target.closest('.contract-row');
+    if (!row || row !== currentRow) return;
+
+    clearTimeout(showTimeout);
+    hideTimeout = setTimeout(() => {
+      tooltip.classList.remove('show');
+    }, 100);
+  }, true);
+})();
+
+// Initialize Enhanced Tables for search and pagination
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof initEnhancedTables === 'function') {
+    initEnhancedTables();
+  }
+});
+</script>
+{% endblock %}
