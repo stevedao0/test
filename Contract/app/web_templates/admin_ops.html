@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold">Admin Ops</h1>
+      <p class="text-gray-600">Xem nhanh logs và backups (read-only)</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Logs</h2>
+      </div>
+      <div class="card-body">
+        {% if logs and logs|length > 0 %}
+        <div class="overflow-auto">
+          <table class="table w-full">
+            <thead>
+              <tr>
+                <th class="text-left">File</th>
+                <th class="text-right">Size</th>
+                <th class="text-right">Tải</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in logs %}
+              <tr>
+                <td class="font-mono text-sm">{{ f.name }}</td>
+                <td class="text-right">{{ f.size }}</td>
+                <td class="text-right">
+                  <a class="btn btn-sm" href="/admin/ops/download/logs/{{ f.name }}">Download</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-gray-600">Chưa có log.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Backups</h2>
+      </div>
+      <div class="card-body">
+        {% if backups and backups|length > 0 %}
+        <div class="overflow-auto">
+          <table class="table w-full">
+            <thead>
+              <tr>
+                <th class="text-left">File</th>
+                <th class="text-right">Size</th>
+                <th class="text-right">Tải</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in backups %}
+              <tr>
+                <td class="font-mono text-sm">{{ f.name }}</td>
+                <td class="text-right">{{ f.size }}</td>
+                <td class="text-right">
+                  <a class="btn btn-sm" href="/admin/ops/download/backups/{{ f.name }}">Download</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-gray-600">Chưa có backup.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

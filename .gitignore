@@ -6,4 +6,13 @@ node_modules/
 __pycache__/
 *.pyc
 
+# Contract runtime data (keep DB committed)
+Contract/storage/*
+!Contract/storage/app.sqlite3
+Contract/storage/backups/
+Contract/storage/logs/
+Contract/storage/locks/
+Contract/storage/excel/
+Contract/storage/docx/
+
 

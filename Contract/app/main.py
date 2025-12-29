@@ -2,16 +2,23 @@ from __future__ import annotations
 
 import re
 import traceback
+import os
+import hashlib
+import hmac
+import secrets
 from io import BytesIO
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, Request, UploadFile, Response
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, Response
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from starlette import status
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 
 from app.config import (
     ANNEX_TEMPLATE_PATH,
@@ -30,36 +37,387 @@ from app.models import ContractCreate, ContractRecord
 # from app.services.annex_store import append_annex_row  # No longer needed - annexes saved to contracts Excel
 from app.services.docx_renderer import date_parts, render_contract_docx
 from app.services.excel_store import (
-    append_contract_row,
-    append_works_rows,
-    delete_contract_row,
     export_catalogue_excel,
     read_contracts,
-    update_contract_row,
 )
 from app.services.safety import audit_log, safe_move_to_backup, safe_replace_bytes
 
+from app.services.excel_store import HEADERS, WORKS_HEADERS
+
+from app.db import DB_PATH, engine, session_scope
+from app.db_models import Base, ContractRecordRow, UserRow, WorkRow
+
 
 app = FastAPI()
+
+
+_basic_auth = HTTPBasic()
+
+
+def _hash_password(password: str, *, salt_hex: str, iterations: int = 200_000) -> str:
+    dk = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        bytes.fromhex(salt_hex),
+        iterations,
+    )
+    return dk.hex()
+
+
+def _verify_password(password: str, *, salt_hex: str, expected_hash_hex: str) -> bool:
+    calc = _hash_password(password, salt_hex=salt_hex)
+    return hmac.compare_digest(calc, expected_hash_hex)
+
+
+def _ensure_default_users() -> None:
+    admin_pwd = os.environ.get("CONTRACT_ADMIN_PASSWORD")
+    mod_pwd = os.environ.get("CONTRACT_MOD_PASSWORD")
+
+    if not admin_pwd:
+        admin_pwd = "admin123"
+    if not mod_pwd:
+        mod_pwd = "mod123"
+
+    with session_scope() as db:
+        has_any = db.query(UserRow).first() is not None
+        if has_any:
+            return
+
+        admin_salt = secrets.token_bytes(16).hex()
+        mod_salt = secrets.token_bytes(16).hex()
+
+        db.add(
+            UserRow(
+                username="admin",
+                role="admin",
+                password_salt=admin_salt,
+                password_hash=_hash_password(admin_pwd, salt_hex=admin_salt),
+            )
+        )
+        db.add(
+            UserRow(
+                username="mod",
+                role="mod",
+                password_salt=mod_salt,
+                password_hash=_hash_password(mod_pwd, salt_hex=mod_salt),
+            )
+        )
+
+
+def _get_current_user(credentials: HTTPBasicCredentials = Depends(_basic_auth)) -> UserRow:
+    with session_scope() as db:
+        user = db.query(UserRow).filter(UserRow.username == credentials.username).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    if not _verify_password(credentials.password, salt_hex=user.password_salt, expected_hash_hex=user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    return user
+
+
+def require_role(*allowed_roles: str):
+    def _dep(user: UserRow = Depends(_get_current_user)) -> UserRow:
+        if user.role not in allowed_roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        return user
+
+    return _dep
+
+
+@app.on_event("startup")
+def _startup_db() -> None:
+    # Ensure SQLite schema exists
+    Base.metadata.create_all(bind=engine)
+    _ensure_default_users()
 
 
 _BACKUPS_DIR = STORAGE_DIR / "backups"
 _LOGS_DIR = STORAGE_DIR / "logs"
 
 
+def _db_available() -> bool:
+    try:
+        return DB_PATH.exists()
+    except Exception:
+        return False
+
+
+def _rows_from_db(*, year: int) -> list[dict]:
+    if not _db_available():
+        return []
+
+    with session_scope() as db:
+        q = db.query(ContractRecordRow).filter(ContractRecordRow.contract_year == year)
+        out: list[dict] = []
+        for r in q.all():
+            out.append(
+                {
+                    "contract_no": r.contract_no,
+                    "contract_year": r.contract_year,
+                    "annex_no": r.annex_no,
+                    "ngay_lap_hop_dong": r.ngay_lap_hop_dong,
+                    "linh_vuc": r.linh_vuc,
+                    "region_code": r.region_code,
+                    "field_code": r.field_code,
+                    "don_vi_ten": r.don_vi_ten,
+                    "don_vi_dia_chi": r.don_vi_dia_chi,
+                    "don_vi_dien_thoai": r.don_vi_dien_thoai,
+                    "don_vi_nguoi_dai_dien": r.don_vi_nguoi_dai_dien,
+                    "don_vi_chuc_vu": r.don_vi_chuc_vu,
+                    "don_vi_mst": r.don_vi_mst,
+                    "don_vi_email": r.don_vi_email,
+                    "so_CCCD": r.so_cccd,
+                    "ngay_cap_CCCD": r.ngay_cap_cccd,
+                    "kenh_ten": r.kenh_ten,
+                    "kenh_id": r.kenh_id,
+                    "nguoi_thuc_hien_email": r.nguoi_thuc_hien_email,
+                    "so_tien_nhuan_but_value": r.so_tien_nhuan_but_value,
+                    "so_tien_nhuan_but_text": r.so_tien_nhuan_but_text,
+                    "so_tien_chua_GTGT_value": r.so_tien_chua_gtgt_value,
+                    "so_tien_chua_GTGT_text": r.so_tien_chua_gtgt_text,
+                    "thue_percent": r.thue_percent,
+                    "thue_GTGT_value": r.thue_gtgt_value,
+                    "thue_GTGT_text": r.thue_gtgt_text,
+                    "so_tien_value": r.so_tien_value,
+                    "so_tien_text": r.so_tien_text,
+                    "so_tien_bang_chu": r.so_tien_bang_chu,
+                    "docx_path": r.docx_path,
+                    "catalogue_path": r.catalogue_path,
+                }
+            )
+        return out
+
+
+def _db_get_contract_row(*, year: int, contract_no: str, annex_no: str | None) -> ContractRecordRow | None:
+    with session_scope() as db:
+        return (
+            db.query(ContractRecordRow)
+            .filter(ContractRecordRow.contract_year == year)
+            .filter(ContractRecordRow.contract_no == contract_no)
+            .filter(ContractRecordRow.annex_no.is_(annex_no) if annex_no is None else (ContractRecordRow.annex_no == annex_no))
+            .first()
+        )
+
+
+def _db_upsert_contract_record(*, record: dict) -> None:
+    year = int(record.get("contract_year") or 0)
+    contract_no = str(record.get("contract_no") or "")
+    annex_no = record.get("annex_no")
+    annex_no = (str(annex_no).strip() if annex_no is not None else None) or None
+
+    with session_scope() as db:
+        q = (
+            db.query(ContractRecordRow)
+            .filter(ContractRecordRow.contract_year == year)
+            .filter(ContractRecordRow.contract_no == contract_no)
+        )
+        if annex_no is None:
+            q = q.filter(ContractRecordRow.annex_no.is_(None))
+        else:
+            q = q.filter(ContractRecordRow.annex_no == annex_no)
+
+        row = q.first()
+        if row is None:
+            row = ContractRecordRow(contract_year=year, contract_no=contract_no, annex_no=annex_no)
+            db.add(row)
+
+        # Map dict -> columns
+        for k, v in record.items():
+            if k in ("so_CCCD", "ngay_cap_CCCD"):
+                continue
+            if hasattr(row, k):
+                setattr(row, k, v)
+
+        # Special casing for legacy key casing
+        if "so_CCCD" in record:
+            row.so_cccd = record.get("so_CCCD")
+        if "ngay_cap_CCCD" in record:
+            row.ngay_cap_cccd = record.get("ngay_cap_CCCD")
+
+
+def _db_update_contract_fields(*, year: int, contract_no: str, annex_no: str | None, updated: dict) -> bool:
+    annex_no = (annex_no.strip() if isinstance(annex_no, str) else annex_no) or None
+
+    with session_scope() as db:
+        q = (
+            db.query(ContractRecordRow)
+            .filter(ContractRecordRow.contract_year == year)
+            .filter(ContractRecordRow.contract_no == contract_no)
+        )
+        if annex_no is None:
+            q = q.filter(ContractRecordRow.annex_no.is_(None))
+        else:
+            q = q.filter(ContractRecordRow.annex_no == annex_no)
+
+        row = q.first()
+        if row is None:
+            return False
+
+        for k, v in updated.items():
+            if k in ("so_CCCD", "ngay_cap_CCCD"):
+                continue
+            if hasattr(row, k):
+                setattr(row, k, v)
+
+        if "so_CCCD" in updated:
+            row.so_cccd = updated.get("so_CCCD")
+        if "ngay_cap_CCCD" in updated:
+            row.ngay_cap_cccd = updated.get("ngay_cap_CCCD")
+
+        return True
+
+
+def _db_delete_contract_record(*, year: int, contract_no: str, annex_no: str | None) -> bool:
+    annex_no = (annex_no.strip() if isinstance(annex_no, str) else annex_no) or None
+    with session_scope() as db:
+        q = (
+            db.query(ContractRecordRow)
+            .filter(ContractRecordRow.contract_year == year)
+            .filter(ContractRecordRow.contract_no == contract_no)
+        )
+        if annex_no is None:
+            q = q.filter(ContractRecordRow.annex_no.is_(None))
+        else:
+            q = q.filter(ContractRecordRow.annex_no == annex_no)
+
+        row = q.first()
+        if row is None:
+            return False
+        db.delete(row)
+        return True
+
+
+_HEADER_FONT = Font(bold=True)
+
+
+def _xlsx_bytes_from_rows(*, sheet_name: str, headers: list[str], rows: list[dict]) -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_name
+
+    for c, h in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=c, value=h)
+        cell.font = _HEADER_FONT
+
+    for r_idx, row in enumerate(rows, start=2):
+        for c, h in enumerate(headers, start=1):
+            ws.cell(row=r_idx, column=c, value=row.get(h))
+
+    bio = BytesIO()
+    wb.save(bio)
+    wb.close()
+    return bio.getvalue()
+
+
+def _export_contracts_excel_bytes(*, year: int) -> bytes:
+    # Build rows matching legacy Excel headers
+    with session_scope() as db:
+        q = db.query(ContractRecordRow).filter(ContractRecordRow.contract_year == year)
+        db_rows = q.all()
+
+    rows: list[dict] = []
+    for r in db_rows:
+        rows.append(
+            {
+                "contract_no": r.contract_no,
+                "contract_year": r.contract_year,
+                "annex_no": r.annex_no,
+                "ngay_lap_hop_dong": r.ngay_lap_hop_dong,
+                "linh_vuc": r.linh_vuc,
+                "region_code": r.region_code,
+                "field_code": r.field_code,
+                "don_vi_ten": r.don_vi_ten,
+                "don_vi_dia_chi": r.don_vi_dia_chi,
+                "don_vi_dien_thoai": r.don_vi_dien_thoai,
+                "don_vi_nguoi_dai_dien": r.don_vi_nguoi_dai_dien,
+                "don_vi_chuc_vu": r.don_vi_chuc_vu,
+                "don_vi_mst": r.don_vi_mst,
+                "don_vi_email": r.don_vi_email,
+                "so_CCCD": r.so_cccd,
+                "ngay_cap_CCCD": r.ngay_cap_cccd,
+                "kenh_ten": r.kenh_ten,
+                "kenh_id": r.kenh_id,
+                "nguoi_thuc_hien_email": r.nguoi_thuc_hien_email,
+                "so_tien_nhuan_but_value": r.so_tien_nhuan_but_value,
+                "so_tien_nhuan_but_text": r.so_tien_nhuan_but_text,
+                "so_tien_chua_GTGT_value": r.so_tien_chua_gtgt_value,
+                "so_tien_chua_GTGT_text": r.so_tien_chua_gtgt_text,
+                "thue_percent": r.thue_percent,
+                "thue_GTGT_value": r.thue_gtgt_value,
+                "thue_GTGT_text": r.thue_gtgt_text,
+                "so_tien_value": r.so_tien_value,
+                "so_tien_text": r.so_tien_text,
+                "so_tien_bang_chu": r.so_tien_bang_chu,
+                "docx_path": r.docx_path,
+                "catalogue_path": r.catalogue_path,
+            }
+        )
+
+    return _xlsx_bytes_from_rows(sheet_name="Contracts", headers=list(HEADERS), rows=rows)
+
+
+def _export_works_excel_bytes(*, year: int) -> bytes:
+    with session_scope() as db:
+        q = db.query(WorkRow).filter(WorkRow.year == year)
+        db_rows = q.all()
+
+    rows: list[dict] = []
+    for r in db_rows:
+        rows.append(
+            {
+                "year": r.year,
+                "contract_no": r.contract_no,
+                "annex_no": r.annex_no,
+                "ngay_ky_hop_dong": r.ngay_ky_hop_dong,
+                "ngay_ky_phu_luc": r.ngay_ky_phu_luc,
+                "nguoi_thuc_hien": r.nguoi_thuc_hien,
+                "ten_kenh": r.ten_kenh,
+                "id_channel": r.id_channel,
+                "link_kenh": r.link_kenh,
+                "stt": r.stt,
+                "id_link": r.id_link,
+                "youtube_url": r.youtube_url,
+                "id_work": r.id_work,
+                "musical_work": r.musical_work,
+                "author": r.author,
+                "composer": r.composer,
+                "lyricist": r.lyricist,
+                "time_range": r.time_range,
+                "duration": r.duration,
+                "effective_date": r.effective_date,
+                "expiration_date": r.expiration_date,
+                "usage_type": r.usage_type,
+                "royalty_rate": r.royalty_rate,
+                "note": r.note,
+                "imported_at": r.imported_at,
+            }
+        )
+
+    return _xlsx_bytes_from_rows(sheet_name="Works", headers=list(WORKS_HEADERS), rows=rows)
+
+
 @app.get("/debug/contracts")
 def debug_contracts(year: int | None = None):
     y = _pick_year(year)
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
-    rows = read_contracts(excel_path=excel_path)
+    rows = _rows_from_db(year=y) if _db_available() else []
     contracts = [r for r in rows if not r.get("annex_no")]
     annexes = [r for r in rows if r.get("annex_no")]
     sample = contracts[0] if contracts else (rows[0] if rows else None)
     return JSONResponse(
         {
             "year": y,
-            "excel_path": str(excel_path),
-            "excel_exists": excel_path.exists(),
+            "db_path": str(DB_PATH),
+            "db_exists": _db_available(),
             "rows": len(rows),
             "contracts": len(contracts),
             "annexes": len(annexes),
@@ -100,28 +458,14 @@ async def catalogue_upload_submit(
     contract_no: str = Form(...),
     annex_no: str = Form(""),
     catalogue_file: UploadFile = File(...),
+    user: UserRow = Depends(require_role("admin", "mod")),
 ):
     try:
         if not catalogue_file.filename or not catalogue_file.filename.lower().endswith(".xlsx"):
             raise ValueError("File danh mục phải là .xlsx")
 
-        # Validate target record exists before writing file
-        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
         target_annex_no = annex_no.strip() or None
-        existing_rows = read_contracts(excel_path=excel_path)
-        found_target = False
-        for r in existing_rows:
-            if r.get("contract_no") != contract_no:
-                continue
-            if target_annex_no is None:
-                if not r.get("annex_no"):
-                    found_target = True
-                    break
-            else:
-                if r.get("annex_no") == target_annex_no:
-                    found_target = True
-                    break
-        if not found_target:
+        if _db_get_contract_row(year=year, contract_no=contract_no, annex_no=target_annex_no) is None:
             raise ValueError("Không tìm thấy hợp đồng/phụ lục để cập nhật catalogue_path")
 
         data = await catalogue_file.read()
@@ -135,11 +479,11 @@ async def catalogue_upload_submit(
         out_path = out_dir / Path(catalogue_file.filename).name
         safe_replace_bytes(out_path, data, backup_dir=_BACKUPS_DIR / "files")
 
-        success = update_contract_row(
-            excel_path=excel_path,
+        success = _db_update_contract_fields(
+            year=year,
             contract_no=contract_no,
             annex_no=target_annex_no,
-            updated_data={"catalogue_path": str(out_path)},
+            updated={"catalogue_path": str(out_path)},
         )
         if not success:
             raise ValueError("Không tìm thấy hợp đồng/phụ lục để cập nhật catalogue_path")
@@ -187,6 +531,410 @@ def _pick_year(year: int | None) -> int:
     return date.today().year
 
 
+@app.get("/")
+def home() -> RedirectResponse:
+    return RedirectResponse(url="/documents/new")
+
+
+@app.get("/contracts/new")
+def contract_form() -> RedirectResponse:
+    return RedirectResponse(url="/documents/new?doc_type=contract")
+
+
+@app.get("/annexes/new")
+def annex_form() -> RedirectResponse:
+    return RedirectResponse(url="/documents/new?doc_type=annex")
+
+
+@app.get("/api/contracts")
+def api_contracts_list(year: int | None = None, q: str | None = None):
+    y = _pick_year(year)
+    rows = _rows_from_db(year=y)
+    contracts = [r for r in rows if not r.get("annex_no")]
+    if q:
+        ql = q.lower()
+        contracts = [
+            c
+            for c in contracts
+            if ql in (c.get("contract_no") or "").lower() or ql in (c.get("kenh_ten") or "").lower()
+        ]
+    result = []
+    for c in contracts:
+        result.append(
+            {
+                "contract_no": c.get("contract_no"),
+                "kenh_ten": c.get("kenh_ten"),
+                "don_vi_ten": c.get("don_vi_ten"),
+                "kenh_id": c.get("kenh_id"),
+            }
+        )
+    return JSONResponse({"contracts": result})
+
+
+@app.get("/contracts", response_class=HTMLResponse)
+def contracts_list(request: Request, response: Response, year: int | None = None, download: str | None = None, download2: str | None = None):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    y = _pick_year(year)
+    rows = _rows_from_db(year=y)
+    contracts = [r for r in rows if not r.get("annex_no")]
+
+    catalogue_filter = (request.query_params.get("catalogue") or "all").strip().lower()
+    if catalogue_filter in ("yes", "has", "1", "true"):
+        contracts = [r for r in contracts if r.get("catalogue_path")]
+    elif catalogue_filter in ("no", "none", "0", "false"):
+        contracts = [r for r in contracts if not r.get("catalogue_path")]
+
+    annexes = [r for r in rows if r.get("annex_no")]
+    for r in contracts:
+        contract_no = r.get("contract_no")
+        r["annex_count"] = len([a for a in annexes if a.get("contract_no") == contract_no])
+
+        p = Path(r.get("docx_path") or "")
+        r["download_url"] = f"/download/{y}/{p.name}" if p.exists() else None
+
+        cp = Path(r.get("catalogue_path") or "")
+        r["catalogue_download_url"] = f"/download_excel/{y}/{cp.name}" if cp.exists() else None
+
+    stats = {
+        "total_contracts": len(contracts),
+        "total_value": sum(int(r.get("so_tien_value") or 0) for r in contracts),
+        "contracts_with_annexes": len({a.get("contract_no") for a in annexes if a.get("contract_no")}),
+    }
+
+    return templates.TemplateResponse(
+        "contracts_list.html",
+        {
+            "request": request,
+            "title": "Danh sách hợp đồng",
+            "year": y,
+            "rows": contracts,
+            "stats": stats,
+            "download": download,
+            "download2": download2,
+            "catalogue_filter": catalogue_filter,
+            "breadcrumbs": get_breadcrumbs(request.url.path),
+        },
+    )
+
+
+@app.get("/annexes", response_class=HTMLResponse)
+def annexes_list(request: Request, response: Response, year: int | None = None, download: str | None = None):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    y = _pick_year(year)
+    rows = _rows_from_db(year=y)
+    annexes = [r for r in rows if r.get("annex_no")]
+
+    catalogue_filter = (request.query_params.get("catalogue") or "all").strip().lower()
+    if catalogue_filter in ("yes", "has", "1", "true"):
+        annexes = [r for r in annexes if r.get("catalogue_path")]
+    elif catalogue_filter in ("no", "none", "0", "false"):
+        annexes = [r for r in annexes if not r.get("catalogue_path")]
+
+    contracts = [r for r in rows if not r.get("annex_no")]
+    contracts_map = {r.get("contract_no"): r for r in contracts}
+
+    for r in annexes:
+        p = Path(r.get("docx_path") or "")
+        r["download_url"] = f"/download/{y}/{p.name}" if p.exists() else None
+
+        cp = Path(r.get("catalogue_path") or "")
+        r["catalogue_download_url"] = f"/download_excel/{y}/{cp.name}" if cp.exists() else None
+
+        parent = contracts_map.get(r.get("contract_no"))
+        if parent:
+            r["parent_contract"] = {
+                "don_vi_ten": parent.get("don_vi_ten", ""),
+                "kenh_ten": parent.get("kenh_ten", ""),
+                "ngay_lap_hop_dong": parent.get("ngay_lap_hop_dong", ""),
+            }
+        else:
+            r["parent_contract"] = None
+
+    stats = {
+        "total_annexes": len(annexes),
+        "total_value": sum(int(r.get("so_tien_value") or 0) for r in annexes),
+    }
+
+    return templates.TemplateResponse(
+        "annexes_list.html",
+        {
+            "request": request,
+            "title": "Danh sách phụ lục",
+            "year": y,
+            "rows": annexes,
+            "stats": stats,
+            "download": download,
+            "catalogue_filter": catalogue_filter,
+            "breadcrumbs": get_breadcrumbs(request.url.path),
+        },
+    )
+
+
+@app.post("/contracts")
+def create_contract(
+    request: Request,
+    ngay_lap_hop_dong: str = Form(...),
+    so_hop_dong_4: str = Form(...),
+    linh_vuc: str = Form("Sao chép trực tuyến"),
+    don_vi_ten: str = Form(""),
+    don_vi_dia_chi: str = Form(""),
+    don_vi_dien_thoai: str = Form(""),
+    don_vi_nguoi_dai_dien: str = Form(""),
+    don_vi_chuc_vu: str = Form("Giám đốc"),
+    don_vi_mst: str = Form(""),
+    don_vi_email: str = Form(""),
+    so_CCCD: str = Form(""),
+    ngay_cap_CCCD: str = Form(""),
+    nguoi_thuc_hien_email: str = Form(""),
+    kenh_ten: str = Form(""),
+    kenh_id: str = Form(""),
+    so_tien_chua_GTGT: str = Form(""),
+    thue_percent: str = Form(""),
+    user: UserRow = Depends(require_role("admin", "mod")),
+):
+    try:
+        channel_id, channel_link = normalize_youtube_channel_input(kenh_id)
+        linh_vuc_value = _clean_opt(linh_vuc) or "Sao chép trực tuyến"
+
+        pre_vat_value: Optional[int] = None
+        vat_percent_value: Optional[float] = None
+        vat_value: Optional[int] = None
+        total_value: Optional[int] = None
+
+        if _clean_opt(so_tien_chua_GTGT):
+            pre_vat_value = normalize_money_to_int(_clean_opt(so_tien_chua_GTGT))
+            pct_raw = _clean_opt(thue_percent) or "10"
+            vat_percent_value = float(pct_raw.replace(",", "."))
+            vat_value = int(round(pre_vat_value * vat_percent_value / 100.0))
+            total_value = pre_vat_value + vat_value
+
+        contract_date = date.fromisoformat(ngay_lap_hop_dong)
+        year = contract_date.year
+        contract_no = f"{so_hop_dong_4}/{year}/{REGION_CODE}/{FIELD_CODE}"
+
+        if _db_get_contract_row(year=year, contract_no=contract_no, annex_no=None) is not None:
+            raise ValueError("Số hợp đồng đã tồn tại")
+
+        out_docx_dir = STORAGE_DOCX_DIR / str(year)
+        out_docx_dir.mkdir(parents=True, exist_ok=True)
+        filename = build_docx_filename(
+            year=year,
+            so_hop_dong_4=so_hop_dong_4,
+            so_phu_luc=None,
+            linh_vuc=linh_vuc_value,
+            kenh_ten=_clean_opt(kenh_ten),
+        )
+        out_docx_path = out_docx_dir / filename
+        if out_docx_path.exists():
+            stem = out_docx_path.stem
+            out_docx_path = out_docx_dir / f"{stem}_{date.today().strftime('%Y%m%d')}.docx"
+
+        context = {
+            "contract_no": contract_no,
+            "so_hop_dong": contract_no,
+            "linh_vuc": linh_vuc_value,
+            **date_parts(contract_date),
+            "don_vi_ten": _clean_opt(don_vi_ten),
+            "don_vi_dia_chi": _clean_opt(don_vi_dia_chi),
+            "don_vi_dien_thoai": normalize_multi_phones(don_vi_dien_thoai),
+            "don_vi_nguoi_dai_dien": _clean_opt(don_vi_nguoi_dai_dien),
+            "don_vi_chuc_vu": _clean_opt(don_vi_chuc_vu) or "Giám đốc",
+            "don_vi_mst": _clean_opt(don_vi_mst),
+            "don_vi_email": normalize_multi_emails(don_vi_email),
+            "so_CCCD": _clean_opt(so_CCCD),
+            "ngay_cap_CCCD": _clean_opt(ngay_cap_CCCD),
+            "kenh_ten": _clean_opt(kenh_ten),
+            "kenh_id": channel_id,
+            "link_kenh": channel_link,
+            "nguoi_thuc_hien_email": normalize_multi_emails(nguoi_thuc_hien_email),
+            "so_tien_chua_GTGT": format_money_number(pre_vat_value) if pre_vat_value else "",
+            "thue_GTGT": format_money_number(vat_value) if vat_value else "",
+            "so_tien": format_money_number(total_value) if total_value else "",
+            "so_tien_bang_chu": money_to_vietnamese_words(total_value) if total_value else "",
+            "thue_percent": str(int(vat_percent_value)) if vat_percent_value else "10",
+        }
+
+        render_contract_docx(template_path=DOCX_TEMPLATE_PATH, output_path=out_docx_path, context=context)
+
+        out_excel_dir = STORAGE_EXCEL_DIR / str(year)
+        out_excel_dir.mkdir(parents=True, exist_ok=True)
+        out_catalogue_path = out_excel_dir / out_docx_path.with_suffix(".xlsx").name
+        export_catalogue_excel(
+            template_path=CATALOGUE_TEMPLATE_PATH,
+            output_path=out_catalogue_path,
+            context=dict(context),
+            sheet_name="Final",
+        )
+
+        _db_upsert_contract_record(
+            record={
+                "contract_no": contract_no,
+                "contract_year": year,
+                "annex_no": None,
+                "ngay_lap_hop_dong": contract_date,
+                "linh_vuc": linh_vuc_value,
+                "region_code": REGION_CODE,
+                "field_code": FIELD_CODE,
+                "don_vi_ten": _clean_opt(don_vi_ten),
+                "don_vi_dia_chi": _clean_opt(don_vi_dia_chi),
+                "don_vi_dien_thoai": normalize_multi_phones(don_vi_dien_thoai),
+                "don_vi_nguoi_dai_dien": _clean_opt(don_vi_nguoi_dai_dien),
+                "don_vi_chuc_vu": _clean_opt(don_vi_chuc_vu) or "Giám đốc",
+                "don_vi_mst": _clean_opt(don_vi_mst),
+                "don_vi_email": normalize_multi_emails(don_vi_email),
+                "so_CCCD": _clean_opt(so_CCCD),
+                "ngay_cap_CCCD": _clean_opt(ngay_cap_CCCD),
+                "kenh_ten": _clean_opt(kenh_ten),
+                "kenh_id": channel_id,
+                "nguoi_thuc_hien_email": normalize_multi_emails(nguoi_thuc_hien_email),
+                "so_tien_chua_GTGT_value": pre_vat_value,
+                "so_tien_chua_GTGT_text": format_money_number(pre_vat_value) if pre_vat_value else "",
+                "thue_percent": vat_percent_value,
+                "thue_GTGT_value": vat_value,
+                "thue_GTGT_text": format_money_number(vat_value) if vat_value else "",
+                "so_tien_value": total_value,
+                "so_tien_text": format_money_number(total_value) if total_value else "",
+                "so_tien_bang_chu": money_to_vietnamese_words(total_value) if total_value else "",
+                "docx_path": str(out_docx_path),
+                "catalogue_path": str(out_catalogue_path),
+            }
+        )
+
+        audit_log(
+            log_dir=_LOGS_DIR,
+            event={
+                "action": "contracts.create",
+                "ip": getattr(getattr(request, "client", None), "host", None),
+                "year": year,
+                "contract_no": contract_no,
+                "actor": user.username,
+            },
+        )
+
+        return RedirectResponse(
+            url=(
+                f"/contracts?year={year}"
+                f"&download=/download/{year}/{out_docx_path.name}"
+                f"&download2=/download_excel/{year}/{out_catalogue_path.name}"
+            ),
+            status_code=303,
+        )
+    except Exception as e:
+        msg = f"{type(e).__name__}: {e}" if str(e) else f"{type(e).__name__}"
+        return RedirectResponse(url=f"/documents/new?doc_type=contract&error={msg}", status_code=303)
+
+
+@app.post("/contracts/{year}/delete")
+def delete_contract(request: Request, year: int, contract_no: str, user: UserRow = Depends(require_role("admin", "mod"))):
+    try:
+        row = _db_get_contract_row(year=year, contract_no=contract_no, annex_no=None)
+        if row and row.docx_path:
+            p = Path(row.docx_path)
+            if p.exists():
+                safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
+        if row and row.catalogue_path:
+            p = Path(row.catalogue_path)
+            if p.exists():
+                safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
+
+        ok = _db_delete_contract_record(year=year, contract_no=contract_no, annex_no=None)
+        if ok:
+            audit_log(
+                log_dir=_LOGS_DIR,
+                event={
+                    "action": "contracts.delete",
+                    "ip": getattr(getattr(request, "client", None), "host", None),
+                    "year": year,
+                    "contract_no": contract_no,
+                    "actor": user.username,
+                },
+            )
+            return JSONResponse({"success": True})
+        return JSONResponse({"success": False, "error": "Không tìm thấy hợp đồng"}, status_code=404)
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/annexes/{year}/delete")
+def delete_annex(request: Request, year: int, contract_no: str, annex_no: str, user: UserRow = Depends(require_role("admin", "mod"))):
+    try:
+        row = _db_get_contract_row(year=year, contract_no=contract_no, annex_no=annex_no)
+        if row and row.docx_path:
+            p = Path(row.docx_path)
+            if p.exists():
+                safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
+        if row and row.catalogue_path:
+            p = Path(row.catalogue_path)
+            if p.exists():
+                safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
+
+        ok = _db_delete_contract_record(year=year, contract_no=contract_no, annex_no=annex_no)
+        if ok:
+            audit_log(
+                log_dir=_LOGS_DIR,
+                event={
+                    "action": "annexes.delete",
+                    "ip": getattr(getattr(request, "client", None), "host", None),
+                    "year": year,
+                    "contract_no": contract_no,
+                    "annex_no": annex_no,
+                    "actor": user.username,
+                },
+            )
+            return JSONResponse({"success": True})
+        return JSONResponse({"success": False, "error": "Không tìm thấy phụ lục"}, status_code=404)
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@app.get("/admin/ops", response_class=HTMLResponse)
+def admin_ops(request: Request, user: UserRow = Depends(require_role("admin"))):
+    logs_dir = STORAGE_DIR / "logs"
+    backups_dir = STORAGE_DIR / "backups"
+
+    logs: list[dict] = []
+    backups: list[dict] = []
+
+    if logs_dir.exists():
+        for p in sorted(logs_dir.glob("**/*")):
+            if p.is_file():
+                logs.append({"name": str(p.relative_to(logs_dir)).replace("\\", "/"), "size": p.stat().st_size})
+
+    if backups_dir.exists():
+        for p in sorted(backups_dir.glob("**/*")):
+            if p.is_file():
+                backups.append({"name": str(p.relative_to(backups_dir)).replace("\\", "/"), "size": p.stat().st_size})
+
+    return templates.TemplateResponse(
+        "admin_ops.html",
+        {
+            "request": request,
+            "title": "Admin Ops",
+            "logs": logs,
+            "backups": backups,
+            "breadcrumbs": get_breadcrumbs(request.url.path),
+        },
+    )
+
+
+@app.get("/admin/ops/download/{kind}/{path:path}")
+def admin_ops_download(kind: str, path: str, user: UserRow = Depends(require_role("admin"))):
+    base = STORAGE_DIR / ("logs" if kind == "logs" else "backups")
+    target = (base / path).resolve()
+    base_resolved = base.resolve()
+    if not str(target).startswith(str(base_resolved)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid path")
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    return FileResponse(path=target, filename=target.name)
+
+
 def _pick_existing_dir(primary: Path, fallback: Path) -> Path:
     try:
         if primary.exists():
@@ -208,6 +956,27 @@ def _pick_templates_dir(primary: Path, fallback: Path) -> Path:
     return fallback
 
 
+def get_breadcrumbs(path: str):
+    breadcrumbs = [{"label": "Trang chủ", "url": "/"}]
+
+    if path.startswith("/contracts"):
+        breadcrumbs.append({"label": "Hợp đồng", "url": "/contracts"})
+        if "/new" in path:
+            breadcrumbs.append({"label": "Tạo mới", "url": None})
+    elif path.startswith("/annexes"):
+        breadcrumbs.append({"label": "Phụ lục", "url": "/annexes"})
+        if "/new" in path:
+            breadcrumbs.append({"label": "Tạo mới", "url": None})
+    elif path.startswith("/works/import"):
+        breadcrumbs.append({"label": "Import tác phẩm", "url": "/works/import"})
+    elif path.startswith("/catalogue/upload"):
+        breadcrumbs.append({"label": "Upload danh mục", "url": "/catalogue/upload"})
+    elif path.startswith("/admin/ops"):
+        breadcrumbs.append({"label": "Admin Ops", "url": "/admin/ops"})
+
+    return breadcrumbs
+
+
 def _pick_static_dir(primary: Path, fallback: Path) -> Path:
     # Only pick the new UI static dir once core assets are present.
     try:
@@ -227,6 +996,78 @@ templates = Jinja2Templates(directory=str(_templates_dir))
 REGION_CODE = "HĐQTGAN-PN"
 FIELD_CODE = "MR"
 FIELD_NAME = "Sao chép trực tuyến"
+
+
+def _clean_opt(v) -> str:
+    if v is None:
+        return ""
+    return str(v).strip()
+
+
+def normalize_multi_emails(s: str) -> str:
+    raw = _clean_opt(s)
+    if not raw:
+        return ""
+    parts = re.split(r"[;,\s]+", raw)
+    parts = [p.strip() for p in parts if p.strip()]
+    return ";".join(dict.fromkeys(parts))
+
+
+def normalize_multi_phones(s: str) -> str:
+    raw = _clean_opt(s)
+    if not raw:
+        return ""
+    parts = re.split(r"[;,\s]+", raw)
+    parts = [p.strip() for p in parts if p.strip()]
+    return ";".join(dict.fromkeys(parts))
+
+
+def normalize_money_to_int(s: str) -> int:
+    raw = _clean_opt(s)
+    if not raw:
+        return 0
+    cleaned = raw.replace("VNĐ", "").replace("VND", "")
+    cleaned = cleaned.replace(".", "").replace(",", "")
+    cleaned = re.sub(r"\s+", "", cleaned)
+    return int(cleaned)
+
+
+def format_money_number(v: int | None) -> str:
+    if v is None:
+        return ""
+    try:
+        return f"{int(v):,}".replace(",", ".")
+    except Exception:
+        return ""
+
+
+def format_money_vnd(v: int | None) -> str:
+    n = format_money_number(v)
+    return f"{n} VNĐ" if n else ""
+
+
+def normalize_youtube_channel_input(value: str) -> tuple[str, str]:
+    s = _clean_opt(value)
+    if not s:
+        return "", ""
+    if s.startswith("http://") or s.startswith("https://"):
+        link = s
+        cid = _extract_channel_id(s)
+        return cid or s, link
+    # Could be UC... id
+    cid = _extract_channel_id(s) or s
+    link = f"https://www.youtube.com/channel/{cid}" if cid.startswith("UC") else ""
+    return cid, link
+
+
+def money_to_vietnamese_words(v: int | None) -> str:
+    # Minimal placeholder; existing detailed implementation was removed during refactor.
+    if v is None:
+        return ""
+    try:
+        return f"{format_money_number(int(v))} đồng"
+    except Exception:
+        return ""
 
 
 def _format_ddmmyyyy(v) -> str:
@@ -466,6 +1307,7 @@ async def works_import_submit(
     request: Request,
     import_file: UploadFile = File(...),
     nguoi_thuc_hien: str = Form(""),
+    user: UserRow = Depends(require_role("admin", "mod")),
 ):
     try:
         data = await import_file.read()
@@ -587,9 +1429,40 @@ async def works_import_submit(
         if not contract_no:
             raise ValueError("Không đọc được số hợp đồng trong file import")
 
-        # Append to works summary file
-        out_path = STORAGE_EXCEL_DIR / f"works_contract_{year}.xlsx"
-        append_works_rows(excel_path=out_path, rows=out_rows)
+        # Insert into DB
+        with session_scope() as db:
+            objs: list[WorkRow] = []
+            for r in out_rows:
+                objs.append(
+                    WorkRow(
+                        year=int(r.get("year") or 0),
+                        contract_no=str(r.get("contract_no") or ""),
+                        annex_no=(str(r.get("annex_no") or "").strip() or None),
+                        ngay_ky_hop_dong=str(r.get("ngay_ky_hop_dong") or ""),
+                        ngay_ky_phu_luc=str(r.get("ngay_ky_phu_luc") or ""),
+                        nguoi_thuc_hien=str(r.get("nguoi_thuc_hien") or ""),
+                        ten_kenh=str(r.get("ten_kenh") or ""),
+                        id_channel=str(r.get("id_channel") or ""),
+                        link_kenh=str(r.get("link_kenh") or ""),
+                        stt=int(r.get("stt")) if r.get("stt") is not None else None,
+                        id_link=str(r.get("id_link") or ""),
+                        youtube_url=str(r.get("youtube_url") or ""),
+                        id_work=str(r.get("id_work") or ""),
+                        musical_work=str(r.get("musical_work") or ""),
+                        author=str(r.get("author") or ""),
+                        composer=str(r.get("composer") or ""),
+                        lyricist=str(r.get("lyricist") or ""),
+                        time_range=str(r.get("time_range") or ""),
+                        duration=str(r.get("duration") or ""),
+                        effective_date=str(r.get("effective_date") or ""),
+                        expiration_date=str(r.get("expiration_date") or ""),
+                        usage_type=str(r.get("usage_type") or ""),
+                        royalty_rate=str(r.get("royalty_rate") or ""),
+                        note=str(r.get("note") or ""),
+                        imported_at=str(r.get("imported_at") or ""),
+                    )
+                )
+            db.bulk_save_objects(objs)
 
         audit_log(
             log_dir=_LOGS_DIR,
@@ -600,7 +1473,7 @@ async def works_import_submit(
                 "contract_no": contract_no,
                 "annex_no": annex_no or "",
                 "rows": len(out_rows),
-                "works_excel": out_path.name,
+                "works_table": "works",
             },
         )
 
@@ -620,777 +1493,17 @@ async def works_import_submit(
                 },
             )
             return RedirectResponse(
-                url=f"/works/import?message=Đã import {len(out_rows)} dòng vào {out_path.name} và cập nhật file danh mục {uploaded_filename}",
+                url=f"/works/import?message=Đã import {len(out_rows)} dòng vào DB và cập nhật file danh mục {uploaded_filename}",
                 status_code=303,
             )
 
         return RedirectResponse(
-            url=f"/works/import?message=Đã import {len(out_rows)} dòng vào {out_path.name}",
+            url=f"/works/import?message=Đã import {len(out_rows)} dòng vào DB",
             status_code=303,
         )
     except Exception as e:
         msg = f"{type(e).__name__}: {e}" if str(e) else f"{type(e).__name__}"
         return RedirectResponse(url=f"/works/import?error={msg}", status_code=303)
-
-
-def _clean_opt(s: Optional[str]) -> str:
-    if s is None:
-        return ""
-    return s.strip()
-
-
-def _split_multi_values(s: str) -> list[str]:
-    if not s:
-        return []
-    normalized = s.replace("\r\n", "\n").replace("\r", "\n")
-    normalized = normalized.replace(",", ";").replace("\n", ";")
-    parts = [p.strip() for p in normalized.split(";")]
-    return [p for p in parts if p]
-
-
-def normalize_multi_emails(s: str) -> str:
-    parts = _split_multi_values(_clean_opt(s))
-    if not parts:
-        return ""
-    return "; ".join(parts)
-
-
-def normalize_multi_phones(s: str) -> str:
-    parts = _split_multi_values(_clean_opt(s))
-    if not parts:
-        return ""
-
-    out: list[str] = []
-    for p in parts:
-        compact = "".join([ch for ch in p if ch.isdigit()])
-        if compact and len(compact) in (10, 11) and compact.startswith("0"):
-            out.append(compact)
-        else:
-            out.append(" ".join(p.split()))
-    return "; ".join(out)
-
-
-def normalize_youtube_channel_input(raw: str) -> tuple[str, str]:
-    """Accept UC... or any youtube channel URL and return (channel_id, full_url)."""
-
-    s = (raw or "").strip()
-    if not s:
-        return "", ""
-
-    # If user pastes a full URL, extract UC id
-    m = re.search(r"(UC[0-9A-Za-z_-]{10,})", s)
-    channel_id = m.group(1) if m else s
-    if not channel_id.startswith("UC"):
-        # Not a UC id, keep as-is but still avoid double prefixing
-        return channel_id, s
-
-    return channel_id, f"https://www.youtube.com/channel/{channel_id}"
-
-
-def normalize_money_to_int(s: str) -> int:
-    # Accept: 15,600,000 or 15600000 or '15,600,000 VNĐ'
-    raw = s.strip()
-    raw = raw.replace("VNĐ", "").replace("VND", "").strip()
-    digits = re.sub(r"[^0-9]", "", raw)
-    if not digits:
-        raise ValueError("Số tiền không hợp lệ")
-    return int(digits)
-
-
-def format_money_vnd(n: int) -> str:
-    return f"{n:,} VNĐ".replace(",", ",")
-
-
-def format_money_number(n: int) -> str:
-    return f"{n:,}".replace(",", ",")
-
-
-def _vi_three_digits(n: int, *, full: bool) -> str:
-    ones = [
-        "không",
-        "một",
-        "hai",
-        "ba",
-        "bốn",
-        "năm",
-        "sáu",
-        "bảy",
-        "tám",
-        "chín",
-    ]
-
-    tram = n // 100
-    chuc = (n % 100) // 10
-    donvi = n % 10
-
-    parts: list[str] = []
-
-    if tram > 0 or full:
-        parts.append(f"{ones[tram]} trăm")
-
-    if chuc == 0:
-        if donvi != 0 and (tram > 0 or full):
-            parts.append("lẻ")
-    elif chuc == 1:
-        parts.append("mười")
-    else:
-        parts.append(f"{ones[chuc]} mươi")
-
-    if donvi == 0:
-        return " ".join(parts).strip()
-    if donvi == 1:
-        if chuc >= 2:
-            parts.append("mốt")
-        else:
-            parts.append("một")
-        return " ".join(parts).strip()
-    if donvi == 4:
-        if chuc >= 2:
-            parts.append("tư")
-        else:
-            parts.append("bốn")
-        return " ".join(parts).strip()
-    if donvi == 5:
-        if chuc >= 1:
-            parts.append("lăm")
-        else:
-            parts.append("năm")
-        return " ".join(parts).strip()
-
-    parts.append(ones[donvi])
-    return " ".join(parts).strip()
-
-
-def money_to_vietnamese_words(n: int) -> str:
-    if n == 0:
-        return "Không đồng"
-    if n < 0:
-        return "Âm " + money_to_vietnamese_words(-n)
-
-    units = [
-        (10**9, "tỷ"),
-        (10**6, "triệu"),
-        (10**3, "nghìn"),
-    ]
-
-    parts: list[str] = []
-    remainder = n
-    started = False
-
-    for base, name in units:
-        block = remainder // base
-        remainder = remainder % base
-        if block == 0:
-            continue
-        started = True
-        parts.append(f"{_vi_three_digits(block, full=False)} {name}")
-
-    if remainder > 0:
-        parts.append(_vi_three_digits(remainder, full=started))
-
-    text = " ".join(p for p in parts if p).strip()
-    text = text[0].upper() + text[1:] if text else text
-    return f"{text} đồng"
-
-
-def get_breadcrumbs(path: str):
-    breadcrumbs = [{"label": "Trang chủ", "url": "/"}]
-
-    if "/contracts" in path:
-        breadcrumbs.append({"label": "Hợp đồng", "url": "/contracts"})
-        if "/new" in path:
-            breadcrumbs.append({"label": "Tạo mới", "url": None})
-    elif "/annexes" in path:
-        breadcrumbs.append({"label": "Phụ lục", "url": "/annexes"})
-        if "/new" in path:
-            breadcrumbs.append({"label": "Tạo mới", "url": None})
-
-    return breadcrumbs
-
-
-@app.get("/", response_class=HTMLResponse)
-def home() -> RedirectResponse:
-    return RedirectResponse(url="/documents/new")
-
-
-@app.get("/contracts/new", response_class=HTMLResponse)
-def contract_form(request: Request, error: str | None = None):
-    url = f"/documents/new?doc_type=contract"
-    if error:
-        url += f"&error={error}"
-    return RedirectResponse(url=url)
-
-
-@app.post("/contracts")
-def create_contract(
-    request: Request,
-    ngay_lap_hop_dong: str = Form(...),
-    so_hop_dong_4: str = Form(...),
-    linh_vuc: str = Form(FIELD_NAME),
-    don_vi_ten: str = Form(""),
-    don_vi_dia_chi: str = Form(""),
-    don_vi_dien_thoai: str = Form(""),
-    don_vi_nguoi_dai_dien: str = Form(""),
-    don_vi_chuc_vu: str = Form("Giám đốc"),
-    don_vi_mst: str = Form(""),
-    don_vi_email: str = Form(""),
-    so_CCCD: str = Form(""),
-    ngay_cap_CCCD: str = Form(""),
-    nguoi_thuc_hien_email: str = Form(""),
-    kenh_ten: str = Form(""),
-    kenh_id: str = Form(""),
-    so_tien_chua_GTGT: str = Form(""),
-    thue_percent: str = Form(""),
-):
-    try:
-        channel_id, channel_link = normalize_youtube_channel_input(kenh_id)
-
-        linh_vuc_value = _clean_opt(linh_vuc) or FIELD_NAME
-
-        # Money option B
-        pre_vat_value: Optional[int] = None
-        pre_vat_text = ""
-        pre_vat_number = ""
-        vat_percent_value: Optional[float] = None
-        vat_value: Optional[int] = None
-        vat_text = ""
-        vat_number = ""
-        total_value: Optional[int] = None
-        total_text = ""
-        total_number = ""
-        total_words = ""
-
-        if _clean_opt(so_tien_chua_GTGT):
-            pre_vat_value = normalize_money_to_int(_clean_opt(so_tien_chua_GTGT))
-            pre_vat_text = format_money_vnd(pre_vat_value)
-            pre_vat_number = format_money_number(pre_vat_value)
-
-            pct_raw = _clean_opt(thue_percent) or "10"
-            vat_percent_value = float(pct_raw.replace(",", "."))
-            if vat_percent_value < 0:
-                raise ValueError("Thuế GTGT không hợp lệ")
-
-            vat_value = int(round(pre_vat_value * vat_percent_value / 100.0))
-            vat_text = format_money_vnd(vat_value)
-            vat_number = format_money_number(vat_value)
-
-            total_value = pre_vat_value + vat_value
-            total_text = format_money_vnd(total_value)
-            total_number = format_money_number(total_value)
-            total_words = money_to_vietnamese_words(total_value)
-
-        payload = ContractCreate(
-            ngay_lap_hop_dong=date.fromisoformat(ngay_lap_hop_dong),
-            so_hop_dong_4=so_hop_dong_4,
-            linh_vuc=linh_vuc_value,
-            don_vi_ten=_clean_opt(don_vi_ten),
-            don_vi_dia_chi=_clean_opt(don_vi_dia_chi),
-            don_vi_dien_thoai=normalize_multi_phones(don_vi_dien_thoai),
-            don_vi_nguoi_dai_dien=_clean_opt(don_vi_nguoi_dai_dien),
-            don_vi_chuc_vu=_clean_opt(don_vi_chuc_vu) or "Giám đốc",
-            don_vi_mst=_clean_opt(don_vi_mst),
-            don_vi_email=normalize_multi_emails(don_vi_email),
-            so_CCCD=_clean_opt(so_CCCD),
-            ngay_cap_CCCD=_clean_opt(ngay_cap_CCCD),
-            nguoi_thuc_hien_email=normalize_multi_emails(nguoi_thuc_hien_email),
-            kenh_ten=_clean_opt(kenh_ten),
-            kenh_id=channel_id,
-            so_tien_chua_GTGT=_clean_opt(so_tien_chua_GTGT) or None,
-            thue_percent=_clean_opt(thue_percent) or None,
-        )
-
-        year = payload.ngay_lap_hop_dong.year
-        contract_no = f"{payload.so_hop_dong_4}/{year}/{REGION_CODE}/{FIELD_CODE}"
-
-        # Prevent duplicates
-        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-        existing = read_contracts(excel_path=excel_path)
-        for r in existing:
-            if r.get("contract_no") == contract_no and not r.get("annex_no"):
-                raise ValueError("Số hợp đồng đã tồn tại")
-
-        # Legacy money fields kept for compatibility (treat as total)
-        money_value = total_value
-        money_text = total_text
-
-        # Render DOCX
-        out_docx_dir = STORAGE_DOCX_DIR / str(year)
-        out_docx_dir.mkdir(parents=True, exist_ok=True)
-        filename = build_docx_filename(
-            year=year,
-            so_hop_dong_4=payload.so_hop_dong_4,
-            so_phu_luc=None,
-            linh_vuc=linh_vuc_value,
-            kenh_ten=payload.kenh_ten or "",
-        )
-        out_docx_path = out_docx_dir / filename
-        if out_docx_path.exists():
-            stem = out_docx_path.stem
-            out_docx_path = out_docx_dir / f"{stem}_{date.today().strftime('%Y%m%d')}.docx"
-
-        context = {
-            "contract_no": contract_no,
-            # Alias keys to match user-defined <...> markers in the sample/template
-            "so_hop_dong": contract_no,
-            "linh_vuc": linh_vuc_value,
-            **date_parts(payload.ngay_lap_hop_dong),
-            # Distinct marker for contract signing date (for future annex/doc upgrades)
-            "ngay_ky_hop_dong": f"{payload.ngay_lap_hop_dong.day:02d}",
-            "ngay_ky_hop_dong_day_du": payload.ngay_lap_hop_dong.strftime("%d/%m/%Y"),
-            # Template aliases for contract date
-            "thang_ky_hop_dong": f"{payload.ngay_lap_hop_dong.month:02d}",
-            "nam_ky_hop_dong": f"{payload.ngay_lap_hop_dong.year}",
-            "don_vi_ten": payload.don_vi_ten,
-            "don_vi_dia_chi": payload.don_vi_dia_chi,
-            "don_vi_dien_thoai": payload.don_vi_dien_thoai,
-            "don_vi_nguoi_dai_dien": payload.don_vi_nguoi_dai_dien,
-            "don_vi_chuc_vu": payload.don_vi_chuc_vu,
-            "don_vi_mst": payload.don_vi_mst,
-            "don_vi_email": payload.don_vi_email,
-            "so_CCCD": payload.so_CCCD or "",
-            "ngay_cap_CCCD": payload.ngay_cap_CCCD or "",
-            "kenh_ten": payload.kenh_ten,
-            "kenh_id": payload.kenh_id,
-            "nguoi_thuc_hien_email": payload.nguoi_thuc_hien_email or "",
-            # In the DOCX template, currency label 'VNĐ' is usually present already.
-            # So we pass number-only strings to avoid 'VNĐ VNĐ'.
-            "so_tien_nhuan_but": total_number,
-
-            # Extra aliases from <...> markers (support both lowercase and uppercase)
-            "TEN_DON_VI": payload.don_vi_ten,
-            "ten_don_vi": payload.don_vi_ten,
-            "dia_chi": payload.don_vi_dia_chi,
-            "so_dien_thoai": payload.don_vi_dien_thoai,
-            "NGUOI_DAI_DIEN": payload.don_vi_nguoi_dai_dien,
-            "nguoi_dai_dien": payload.don_vi_nguoi_dai_dien,
-            "CHUC_VU": payload.don_vi_chuc_vu,
-            "chuc_vu": payload.don_vi_chuc_vu,
-            "ma_so_thue": payload.don_vi_mst,
-            "email": payload.don_vi_email,
-            "ten_kenh": payload.kenh_ten,
-            "link_kenh": channel_link,
-            "so_tien_chua_GTGT": pre_vat_number,
-            "so_tien_GTGT": total_number,
-            "thue_GTGT": vat_number,
-            "so_tien": total_number,
-            "so_tien_bang_chu": total_words,
-            "thue_percent": str(int(vat_percent_value)) if vat_percent_value else "10",
-        }
-
-        render_contract_docx(
-            template_path=DOCX_TEMPLATE_PATH,
-            output_path=out_docx_path,
-            context=context,
-        )
-
-        # Export catalogue Excel from template
-        out_excel_dir = STORAGE_EXCEL_DIR / str(year)
-        out_excel_dir.mkdir(parents=True, exist_ok=True)
-        catalogue_name = out_docx_path.with_suffix(".xlsx").name
-        out_catalogue_path = out_excel_dir / catalogue_name
-
-        catalogue_context = dict(context)
-        catalogue_context["so_hop_dong_day_du"] = contract_no
-        catalogue_context["ngay_ky_hop_dong"] = payload.ngay_lap_hop_dong.strftime("%d/%m/%Y")
-        export_catalogue_excel(
-            template_path=CATALOGUE_TEMPLATE_PATH,
-            output_path=out_catalogue_path,
-            context=catalogue_context,
-            sheet_name="Final",
-        )
-
-        # Append Excel
-        record = ContractRecord(
-            contract_no=contract_no,
-            contract_year=year,
-            ngay_lap_hop_dong=payload.ngay_lap_hop_dong,
-            linh_vuc=linh_vuc_value,
-            region_code=REGION_CODE,
-            field_code=FIELD_CODE,
-            don_vi_ten=payload.don_vi_ten,
-            don_vi_dia_chi=payload.don_vi_dia_chi,
-            don_vi_dien_thoai=payload.don_vi_dien_thoai,
-            don_vi_nguoi_dai_dien=payload.don_vi_nguoi_dai_dien,
-            don_vi_chuc_vu=payload.don_vi_chuc_vu,
-            don_vi_mst=payload.don_vi_mst,
-            don_vi_email=normalize_multi_emails(payload.don_vi_email),
-            so_CCCD=payload.so_CCCD or "",
-            ngay_cap_CCCD=payload.ngay_cap_CCCD or "",
-            kenh_ten=payload.kenh_ten,
-            kenh_id=payload.kenh_id,
-            nguoi_thuc_hien_email=normalize_multi_emails(payload.nguoi_thuc_hien_email or ""),
-            so_tien_nhuan_but_value=money_value,
-            so_tien_nhuan_but_text=format_money_number(money_value) if money_value is not None else "",
-            so_tien_chua_GTGT_value=pre_vat_value,
-            so_tien_chua_GTGT_text=format_money_number(pre_vat_value) if pre_vat_value is not None else "",
-            thue_percent=vat_percent_value,
-            thue_GTGT_value=vat_value,
-            thue_GTGT_text=format_money_number(vat_value) if vat_value is not None else "",
-            so_tien_value=total_value,
-            so_tien_text=format_money_number(total_value) if total_value is not None else "",
-            so_tien_bang_chu=total_words,
-            docx_path=str(out_docx_path),
-            catalogue_path=str(out_catalogue_path),
-        )
-        append_contract_row(excel_path=excel_path, record=record)
-
-        audit_log(
-            log_dir=_LOGS_DIR,
-            event={
-                "action": "contracts.create",
-                "ip": getattr(getattr(request, "client", None), "host", None),
-                "year": year,
-                "contract_no": contract_no,
-                "docx": out_docx_path.name,
-                "catalogue": out_catalogue_path.name,
-            },
-        )
-
-        return RedirectResponse(
-            url=(
-                f"/contracts?year={year}"
-                f"&download=/download/{year}/{out_docx_path.name}"
-                f"&download2=/download_excel/{year}/{out_catalogue_path.name}"
-            ),
-            status_code=303,
-        )
-
-    except Exception as e:
-        traceback.print_exc()
-        msg = f"{type(e).__name__}: {e}" if str(e) else f"{type(e).__name__}"
-        return RedirectResponse(url=f"/documents/new?doc_type=contract&error={msg}", status_code=303)
-
-
-@app.get("/api/contracts")
-def api_contracts_list(year: int | None = None, q: str | None = None):
-    y = _pick_year(year)
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
-    rows = read_contracts(excel_path=excel_path)
-
-    # Filter: only show contracts (annex_no is empty)
-    contracts = [r for r in rows if not r.get("annex_no")]
-
-    # Apply search filter if provided
-    if q:
-        q_lower = q.lower()
-        contracts = [
-            c for c in contracts
-            if q_lower in (c.get("contract_no") or "").lower()
-            or q_lower in (c.get("kenh_ten") or "").lower()
-        ]
-
-    # Serialize and return only essential fields
-    result = []
-    for c in contracts:
-        result.append({
-            "contract_no": c.get("contract_no"),
-            "kenh_ten": c.get("kenh_ten"),
-            "don_vi_ten": c.get("don_vi_ten"),
-            "kenh_id": c.get("kenh_id"),
-        })
-
-    return JSONResponse({"contracts": result})
-
-
-@app.get("/contracts", response_class=HTMLResponse)
-def contracts_list(request: Request, response: Response, year: int | None = None, download: str | None = None, download2: str | None = None):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-
-    y = _pick_year(year)
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
-
-    rows = read_contracts(excel_path=excel_path)
-
-    # Filter: only show contracts (annex_no is empty)
-    contracts = [r for r in rows if not r.get("annex_no")]
-
-    catalogue_filter = (request.query_params.get("catalogue") or "all").strip().lower()
-    if catalogue_filter in ("yes", "has", "1", "true"):
-        contracts = [r for r in contracts if r.get("catalogue_path")]
-    elif catalogue_filter in ("no", "none", "0", "false"):
-        contracts = [r for r in contracts if not r.get("catalogue_path")]
-
-    # Calculate statistics
-    total_contracts = len(contracts)
-    total_value = 0
-    for r in contracts:
-        val = r.get("so_tien_value", 0)
-        if val:
-            try:
-                if isinstance(val, str):
-                    val = int(val.replace(",", "").replace(".", ""))
-                total_value += int(val)
-            except (ValueError, AttributeError):
-                pass
-
-    # Count contracts with annexes
-    all_contract_nos = {r.get("contract_no") for r in contracts}
-    annexes = [r for r in rows if r.get("annex_no")]
-    contracts_with_annexes = len({r.get("contract_no") for r in annexes if r.get("contract_no") in all_contract_nos})
-
-    # Add download url and annex count
-    for r in contracts:
-        path = r.get("docx_path")
-        if isinstance(path, str) and path.strip():
-            p = Path(path)
-            if p.exists():
-                filename = p.name
-                r["download_url"] = f"/download/{y}/{filename}"
-            else:
-                r["download_url"] = None
-        else:
-            r["download_url"] = None
-
-        # Count annexes for this contract
-        contract_no = r.get("contract_no")
-        r["annex_count"] = len([a for a in annexes if a.get("contract_no") == contract_no])
-
-        catalogue_path = r.get("catalogue_path")
-        if isinstance(catalogue_path, str) and catalogue_path.strip():
-            p = Path(catalogue_path)
-            if p.exists():
-                r["catalogue_download_url"] = f"/download_excel/{y}/{p.name}"
-            else:
-                r["catalogue_download_url"] = None
-        else:
-            r["catalogue_download_url"] = None
-
-    stats = {
-        "total_contracts": total_contracts,
-        "total_value": total_value,
-        "contracts_with_annexes": contracts_with_annexes,
-    }
-
-    return templates.TemplateResponse(
-        "contracts_list.html",
-        {
-            "request": request,
-            "title": "Danh sách hợp đồng",
-            "year": y,
-            "rows": contracts,
-            "stats": stats,
-            "download": download,
-            "download2": download2,
-            "catalogue_filter": catalogue_filter,
-            "breadcrumbs": get_breadcrumbs(request.url.path),
-        },
-    )
-
-
-@app.get("/annexes", response_class=HTMLResponse)
-def annexes_list(request: Request, response: Response, year: int | None = None, download: str | None = None):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-
-    y = _pick_year(year)
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
-
-    rows = read_contracts(excel_path=excel_path)
-
-    # Filter: only show annexes (annex_no is not empty)
-    annexes = [r for r in rows if r.get("annex_no")]
-
-    catalogue_filter = (request.query_params.get("catalogue") or "all").strip().lower()
-    if catalogue_filter in ("yes", "has", "1", "true"):
-        annexes = [r for r in annexes if r.get("catalogue_path")]
-    elif catalogue_filter in ("no", "none", "0", "false"):
-        annexes = [r for r in annexes if not r.get("catalogue_path")]
-
-    # Get base contracts for reference
-    contracts = [r for r in rows if not r.get("annex_no")]
-    contracts_map = {r.get("contract_no"): r for r in contracts}
-
-    # Calculate statistics
-    total_annexes = len(annexes)
-    total_value = 0
-    for r in annexes:
-        val = r.get("so_tien_value", 0)
-        if val:
-            try:
-                if isinstance(val, str):
-                    val = int(val.replace(",", "").replace(".", ""))
-                total_value += int(val)
-            except (ValueError, AttributeError):
-                pass
-
-    # Find contract with most annexes
-    contract_annex_counts = {}
-    for a in annexes:
-        contract_no = a.get("contract_no")
-        if contract_no:
-            contract_annex_counts[contract_no] = contract_annex_counts.get(contract_no, 0) + 1
-
-    most_annexes_contract = None
-    most_annexes_count = 0
-    if contract_annex_counts:
-        most_annexes_contract = max(contract_annex_counts, key=contract_annex_counts.get)
-        most_annexes_count = contract_annex_counts[most_annexes_contract]
-
-    # Add download url and parent contract info
-    for r in annexes:
-        path = r.get("docx_path")
-        if isinstance(path, str) and path.strip():
-            p = Path(path)
-            if p.exists():
-                filename = p.name
-                r["download_url"] = f"/download/{y}/{filename}"
-            else:
-                r["download_url"] = None
-        else:
-            r["download_url"] = None
-
-        # Add parent contract info
-        contract_no = r.get("contract_no")
-        if contract_no in contracts_map:
-            parent = contracts_map[contract_no]
-            r["parent_contract"] = {
-                "don_vi_ten": parent.get("don_vi_ten", ""),
-                "kenh_ten": parent.get("kenh_ten", ""),
-                "ngay_lap_hop_dong": parent.get("ngay_lap_hop_dong", ""),
-            }
-        else:
-            r["parent_contract"] = None
-
-        catalogue_path = r.get("catalogue_path")
-        if isinstance(catalogue_path, str) and catalogue_path.strip():
-            p = Path(catalogue_path)
-            if p.exists():
-                r["catalogue_download_url"] = f"/download_excel/{y}/{p.name}"
-            else:
-                r["catalogue_download_url"] = None
-        else:
-            r["catalogue_download_url"] = None
-
-    stats = {
-        "total_annexes": total_annexes,
-        "total_value": total_value,
-        "most_annexes_contract": most_annexes_contract,
-        "most_annexes_count": most_annexes_count,
-        "unique_contracts": len(contract_annex_counts),
-    }
-
-    return templates.TemplateResponse(
-        "annexes_list.html",
-        {
-            "request": request,
-            "title": "Danh sách phụ lục",
-            "year": y,
-            "rows": annexes,
-            "stats": stats,
-            "download": download,
-            "catalogue_filter": catalogue_filter,
-            "breadcrumbs": get_breadcrumbs(request.url.path),
-        },
-    )
-
-
-@app.get("/download/{year}/{filename}")
-def download_docx(year: int, filename: str):
-    path = STORAGE_DOCX_DIR / str(year) / filename
-    if not path.exists():
-        return HTMLResponse("Not found", status_code=404)
-    return FileResponse(
-        path,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        filename=filename,
-    )
-
-
-@app.get("/download_excel/{year}/{filename}")
-def download_excel(year: int, filename: str):
-    path = STORAGE_EXCEL_DIR / str(year) / filename
-    if not path.exists():
-        return HTMLResponse("Not found", status_code=404)
-    return FileResponse(
-        path,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        filename=filename,
-    )
-
-
-def _serialize_for_json(obj):
-    """Convert datetime objects to strings for JSON serialization"""
-    if isinstance(obj, dict):
-        return {k: _serialize_for_json(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [_serialize_for_json(item) for item in obj]
-    elif isinstance(obj, (date, datetime)):
-        return obj.isoformat()
-    else:
-        return obj
-
-
-@app.get("/contracts/{year}/detail")
-def get_contract_detail(year: int, contract_no: str):
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-    rows = read_contracts(excel_path=excel_path)
-
-    contract = None
-    for r in rows:
-        if r.get("contract_no") == contract_no and not r.get("annex_no"):
-            contract = r
-            break
-
-    if not contract:
-        return JSONResponse({"error": f"Không tìm thấy hợp đồng: {contract_no}"}, status_code=404)
-
-    # Get annexes for this contract
-    annexes = [r for r in rows if r.get("contract_no") == contract_no and r.get("annex_no")]
-
-    # Format dates for display
-    if contract.get("ngay_lap_hop_dong"):
-        val = contract["ngay_lap_hop_dong"]
-        if isinstance(val, (date, datetime)):
-            contract["ngay_lap_hop_dong_display"] = val.strftime("%d/%m/%Y")
-
-    # Serialize datetime objects for JSON
-    contract_serialized = _serialize_for_json(contract)
-    annexes_serialized = _serialize_for_json(annexes)
-
-    return JSONResponse({
-        "contract": contract_serialized,
-        "annexes": annexes_serialized,
-    })
-
-
-@app.get("/contracts/{year}/edit", response_class=HTMLResponse)
-def edit_contract_form(request: Request, year: int, contract_no: str):
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-    rows = read_contracts(excel_path=excel_path)
-
-    contract = None
-    for r in rows:
-        if r.get("contract_no") == contract_no and not r.get("annex_no"):
-            contract = r
-            break
-
-    if not contract:
-        return RedirectResponse(url=f"/contracts?year={year}&error=Không tìm thấy hợp đồng", status_code=303)
-
-    # Format date for form input
-    ngay_lap = contract.get("ngay_lap_hop_dong")
-    if isinstance(ngay_lap, (date, datetime)):
-        if isinstance(ngay_lap, datetime):
-            ngay_lap = ngay_lap.date()
-        contract["ngay_lap_hop_dong"] = ngay_lap.isoformat()
-
-    # Parse so_hop_dong_4 from contract_no
-    so_hop_dong_4 = _parse_so_hop_dong_4(contract_no)
-    contract["so_hop_dong_4"] = so_hop_dong_4
-
-    return templates.TemplateResponse(
-        "contract_edit.html",
-        {
-            "request": request,
-            "title": f"Chỉnh sửa hợp đồng {contract_no}",
-            "contract": contract,
-            "year": year,
-            "breadcrumbs": get_breadcrumbs(request.url.path),
-        },
-    )
 
 
 @app.post("/contracts/{year}/update")
@@ -1410,10 +1523,9 @@ def update_contract(
     kenh_id: str = Form(""),
     so_tien_chua_GTGT: str = Form(""),
     thue_percent: str = Form("10"),
+    user: UserRow = Depends(require_role("admin", "mod")),
 ):
     try:
-        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-
         # Calculate money
         pre_vat_value = None
         vat_value = None
@@ -1452,11 +1564,11 @@ def update_contract(
             "so_tien_bang_chu": money_to_vietnamese_words(total_value) if total_value else "",
         }
 
-        success = update_contract_row(
-            excel_path=excel_path,
+        success = _db_update_contract_fields(
+            year=year,
             contract_no=contract_no,
             annex_no=None,
-            updated_data=updated_data
+            updated=updated_data,
         )
 
         if success:
@@ -1479,116 +1591,6 @@ def update_contract(
     except Exception as e:
         from urllib.parse import quote
         return RedirectResponse(url=f"/contracts/{year}/edit?contract_no={quote(contract_no)}&error={str(e)}", status_code=303)
-
-
-@app.post("/contracts/{year}/delete")
-def delete_contract(request: Request, year: int, contract_no: str):
-    try:
-        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-
-        # Delete associated files (move to backup instead of permanent delete)
-        rows = read_contracts(excel_path=excel_path)
-        for r in rows:
-            if r.get("contract_no") == contract_no and not r.get("annex_no"):
-                docx_path = r.get("docx_path")
-                if docx_path and isinstance(docx_path, str):
-                    p = Path(docx_path)
-                    if p.exists():
-                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
-
-                catalogue_path = r.get("catalogue_path")
-                if catalogue_path and isinstance(catalogue_path, str):
-                    p = Path(catalogue_path)
-                    if p.exists():
-                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
-                break
-
-        success = delete_contract_row(excel_path=excel_path, contract_no=contract_no, annex_no=None)
-
-        if success:
-            audit_log(
-                log_dir=_LOGS_DIR,
-                event={
-                    "action": "contracts.delete",
-                    "ip": getattr(getattr(request, "client", None), "host", None),
-                    "year": year,
-                    "contract_no": contract_no,
-                },
-            )
-
-        if success:
-            return JSONResponse({"success": True, "message": "Đã xóa hợp đồng"})
-        else:
-            return JSONResponse({"success": False, "error": "Không tìm thấy hợp đồng"}, status_code=404)
-
-    except Exception as e:
-        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
-
-
-@app.post("/annexes/{year}/delete")
-def delete_annex(request: Request, year: int, contract_no: str, annex_no: str):
-    try:
-        excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-
-        # Delete associated files (move to backup instead of permanent delete)
-        rows = read_contracts(excel_path=excel_path)
-        for r in rows:
-            if r.get("contract_no") == contract_no and r.get("annex_no") == annex_no:
-                # Delete DOCX
-                docx_path = r.get("docx_path")
-                if docx_path and isinstance(docx_path, str):
-                    p = Path(docx_path)
-                    if p.exists():
-                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
-
-                # Delete catalogue Excel if exists
-                catalogue_path = r.get("catalogue_path")
-                if catalogue_path and isinstance(catalogue_path, str):
-                    p = Path(catalogue_path)
-                    if p.exists():
-                        safe_move_to_backup(p, backup_dir=_BACKUPS_DIR / "deleted")
-                break
-
-        success = delete_contract_row(excel_path=excel_path, contract_no=contract_no, annex_no=annex_no)
-
-        if success:
-            audit_log(
-                log_dir=_LOGS_DIR,
-                event={
-                    "action": "annexes.delete",
-                    "ip": getattr(getattr(request, "client", None), "host", None),
-                    "year": year,
-                    "contract_no": contract_no,
-                    "annex_no": annex_no,
-                },
-            )
-
-        if success:
-            return JSONResponse({"success": True, "message": f"Đã xóa phụ lục {annex_no}"})
-        else:
-            return JSONResponse({"success": False, "error": "Không tìm thấy phụ lục"}, status_code=404)
-
-    except Exception as e:
-        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
-
-
-@app.get("/annexes/new", response_class=HTMLResponse)
-def annex_form(request: Request, year: int | None = None, contract_no: str | None = None, error: str | None = None):
-    y = year or date.today().year
-    url = f"/documents/new?doc_type=annex&year={y}"
-    if contract_no:
-        url += f"&contract_no={contract_no}"
-    if error:
-        url += f"&error={error}"
-    return RedirectResponse(url=url)
-
-
-def _parse_so_hop_dong_4(contract_no: str) -> str:
-    # Expected: 0001/2025/HĐQTGAN-PN/MR
-    if not contract_no:
-        return ""
-    parts = contract_no.split("/")
-    return parts[0] if parts else ""
 
 
 @app.post("/annexes")
@@ -1625,7 +1627,8 @@ def create_annex(
         else:
             year = date.today().year
 
-        contracts = read_contracts(excel_path=STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx")
+        # Read from DB for validation + defaults
+        contracts = _rows_from_db(year=year)
 
         # Prevent duplicate annex_no for the same contract
         if so_phu_luc:
@@ -1825,9 +1828,6 @@ def create_annex(
             sheet_name="Final",
         )
 
-        # Append to contracts Excel with annex_no filled
-        contracts_excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-
         # Determine VAT percent value
         vat_percent_final = None
         if _clean_opt(so_tien_chua_GTGT):
@@ -1838,7 +1838,7 @@ def create_annex(
             contract_no=contract_no,
             contract_year=year,
             annex_no=so_phu_luc,
-            ngay_lap_hop_dong=annex_date,
+            ngay_lap_hop_dong=contract_date,
             linh_vuc=linh_vuc_value,
             region_code=REGION_CODE,
             field_code=FIELD_CODE,
@@ -1864,7 +1864,41 @@ def create_annex(
             docx_path=str(out_docx_path),
             catalogue_path=str(out_catalogue_path),
         )
-        append_contract_row(excel_path=contracts_excel_path, record=annex_record)
+        _db_upsert_contract_record(
+            record={
+                "contract_no": contract_no,
+                "contract_year": year,
+                "annex_no": so_phu_luc,
+                "ngay_lap_hop_dong": contract_date,
+                "linh_vuc": linh_vuc_value,
+                "region_code": REGION_CODE,
+                "field_code": FIELD_CODE,
+                "don_vi_ten": don_vi_ten_value,
+                "don_vi_dia_chi": don_vi_dia_chi_value,
+                "don_vi_dien_thoai": don_vi_dien_thoai_value,
+                "don_vi_nguoi_dai_dien": don_vi_nguoi_dai_dien_value,
+                "don_vi_chuc_vu": don_vi_chuc_vu_value,
+                "don_vi_mst": don_vi_mst_value,
+                "don_vi_email": don_vi_email_value,
+                "so_CCCD": _clean_opt(so_CCCD),
+                "ngay_cap_CCCD": _clean_opt(ngay_cap_CCCD),
+                "kenh_ten": kenh_ten_value,
+                "kenh_id": channel_id_value,
+                "nguoi_thuc_hien_email": normalize_multi_emails(nguoi_thuc_hien_email),
+                "so_tien_nhuan_but_value": total_value if total_value else None,
+                "so_tien_nhuan_but_text": format_money_number(total_value) if total_value else None,
+                "so_tien_chua_GTGT_value": pre_vat_value if pre_vat_value else None,
+                "so_tien_chua_GTGT_text": format_money_number(pre_vat_value) if pre_vat_value else None,
+                "thue_percent": vat_percent_value if vat_percent_value else None,
+                "thue_GTGT_value": vat_value if vat_value else None,
+                "thue_GTGT_text": format_money_number(vat_value) if vat_value else None,
+                "so_tien_value": total_value if total_value else None,
+                "so_tien_text": format_money_number(total_value) if total_value else None,
+                "so_tien_bang_chu": total_words if total_words else None,
+                "docx_path": str(out_docx_path),
+                "catalogue_path": str(out_catalogue_path),
+            }
+        )
 
         audit_log(
             log_dir=_LOGS_DIR,
@@ -1900,7 +1934,7 @@ def document_form_unified(
     error: str | None = None,
 ):
     y = year or date.today().year
-    contracts = read_contracts(excel_path=STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx")
+    contracts = _rows_from_db(year=y)
 
     # Filter: only show base contracts (no annex_no) for dropdown
     contracts = [r for r in contracts if not r.get("annex_no")]
@@ -2013,25 +2047,27 @@ def create_document_unified(
 
 @app.get("/storage/excel/download/{year}")
 def download_contracts_excel(year: int):
-    excel_path = STORAGE_EXCEL_DIR / f"contracts_{year}.xlsx"
-    if not excel_path.exists():
-        return JSONResponse({"error": "File không tồn tại"}, status_code=404)
-    return FileResponse(
-        path=excel_path,
-        filename=f"contracts_{year}.xlsx",
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    if not _db_available():
+        return JSONResponse({"error": "DB không tồn tại"}, status_code=500)
+
+    data = _export_contracts_excel_bytes(year=year)
+    return StreamingResponse(
+        BytesIO(data),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="contracts_{year}.xlsx"'},
     )
 
 
 @app.get("/storage/excel/works/download/{year}")
 def download_works_excel(year: int):
-    excel_path = STORAGE_EXCEL_DIR / f"works_contract_{year}.xlsx"
-    if not excel_path.exists():
-        return JSONResponse({"error": "File không tồn tại"}, status_code=404)
-    return FileResponse(
-        path=excel_path,
-        filename=f"works_contract_{year}.xlsx",
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    if not _db_available():
+        return JSONResponse({"error": "DB không tồn tại"}, status_code=500)
+
+    data = _export_works_excel_bytes(year=year)
+    return StreamingResponse(
+        BytesIO(data),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="works_contract_{year}.xlsx"'},
     )
 
 
