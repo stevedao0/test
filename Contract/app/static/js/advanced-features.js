@@ -56,12 +56,16 @@ function setupCopyElement(el) {
 }
 
 function initCopyToClipboard() {
-  document.querySelectorAll('[data-copy]').forEach(setupCopyElement);
+  const elements = document.querySelectorAll('[data-copy]');
+  console.log(`📋 Initializing copy for ${elements.length} elements`);
+  elements.forEach(setupCopyElement);
 }
 
 function reinitCopyToClipboard(container) {
   if (!container) return;
-  container.querySelectorAll('[data-copy]').forEach(setupCopyElement);
+  const elements = container.querySelectorAll('[data-copy]');
+  console.log(`📋 Reinitializing copy for ${elements.length} elements in container`);
+  elements.forEach(setupCopyElement);
 }
 
 if (typeof window !== 'undefined') {

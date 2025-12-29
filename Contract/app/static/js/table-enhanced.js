@@ -10,7 +10,11 @@ class EnhancedTable {
     this.searchQuery = '';
 
     const tableId = container.getAttribute('data-enhanced-table');
+    console.log(`🔧 Setting up EnhancedTable for: ${tableId}`);
+
     this.searchInput = document.querySelector(`[data-table-search="${tableId}"]`);
+    console.log(`  - Search input selector: [data-table-search="${tableId}"]`, this.searchInput);
+
     this.tableBody = container.querySelector('[data-table-body]');
     this.table = container.querySelector('[data-sortable-table]');
     this.perPageSelect = container.querySelector('[data-per-page]');
@@ -37,13 +41,25 @@ class EnhancedTable {
   }
 
   init() {
+    console.log('🔍 Initializing EnhancedTable:', {
+      searchInput: this.searchInput ? 'Found' : 'NOT FOUND',
+      tableBody: this.tableBody ? 'Found' : 'NOT FOUND',
+      table: this.table ? 'Found' : 'NOT FOUND',
+      paginationInfo: this.paginationInfo ? 'Found' : 'NOT FOUND',
+      paginationControls: this.paginationControls ? 'Found' : 'NOT FOUND'
+    });
+
     this.extractDataFromTable();
 
     if (this.searchInput) {
       this.searchInput.addEventListener('input', (e) => {
+        console.log('🔍 Search input:', e.target.value);
         this.searchQuery = e.target.value.toLowerCase();
         this.applyFilters();
       });
+      console.log('✓ Search listener attached');
+    } else {
+      console.warn('⚠️ Search input not found!');
     }
 
     if (this.table) {
@@ -71,9 +87,13 @@ class EnhancedTable {
 
     const rows = this.tableBody.querySelectorAll('tr');
     this.data = Array.from(rows).map(row => {
+      const rowClone = row.cloneNode(true);
+
+      rowClone.querySelectorAll('.copy-icon').forEach(icon => icon.remove());
+
       const cells = row.querySelectorAll('td');
       const rowData = {
-        _html: row.innerHTML,
+        _html: rowClone.innerHTML,
         _element: row,
         _attributes: {}
       };
@@ -94,9 +114,13 @@ class EnhancedTable {
     });
 
     this.filteredData = [...this.data];
+    console.log(`  - Extracted ${this.data.length} rows from table`);
   }
 
   applyFilters() {
+    console.log(`🔍 Applying filters: "${this.searchQuery}"`);
+    console.log(`  - Total data rows: ${this.data.length}`);
+
     this.filteredData = this.data.filter(row => {
       if (!this.searchQuery) return true;
 
@@ -107,6 +131,7 @@ class EnhancedTable {
       });
     });
 
+    console.log(`  - Filtered rows: ${this.filteredData.length}`);
     this.currentPage = 1;
     this.renderTable();
   }
@@ -282,7 +307,9 @@ class EnhancedTable {
 }
 
 function initEnhancedTables() {
-  document.querySelectorAll('.data-table-container').forEach(container => {
+  const containers = document.querySelectorAll('.data-table-container');
+  console.log(`📊 Initializing ${containers.length} enhanced tables`);
+  containers.forEach(container => {
     new EnhancedTable(container);
   });
 }
