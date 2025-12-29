@@ -9,12 +9,27 @@ class EnhancedTable {
     this.sortDirection = 'asc';
     this.searchQuery = '';
 
-    this.searchInput = container.querySelector('[data-table-search]');
+    const tableId = container.getAttribute('data-enhanced-table');
+    this.searchInput = document.querySelector(`[data-table-search="${tableId}"]`);
     this.tableBody = container.querySelector('[data-table-body]');
     this.table = container.querySelector('[data-sortable-table]');
-    this.paginationInfo = container.querySelector('.pagination-info');
-    this.paginationControls = container.querySelector('.pagination-controls');
     this.perPageSelect = container.querySelector('[data-per-page]');
+
+    this.paginationContainer = document.querySelector(`[data-pagination-for="${tableId}"]`);
+    if (this.paginationContainer) {
+      if (!this.paginationContainer.querySelector('.pagination-wrapper')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pagination-wrapper';
+        wrapper.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: var(--space-4); border-top: 1px solid var(--border-color);';
+        wrapper.innerHTML = `
+          <div class="pagination-info" style="color: var(--text-secondary); font-size: var(--text-sm);"></div>
+          <div class="pagination-controls" style="display: flex; gap: var(--space-2);"></div>
+        `;
+        this.paginationContainer.appendChild(wrapper);
+      }
+      this.paginationInfo = this.paginationContainer.querySelector('.pagination-info');
+      this.paginationControls = this.paginationContainer.querySelector('.pagination-controls');
+    }
 
     if (this.table) {
       this.init();
