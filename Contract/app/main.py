@@ -41,6 +41,45 @@ from app.services.excel_store import (
 app = FastAPI()
 
 
+@app.get("/debug/contracts")
+def debug_contracts(year: int | None = None):
+    y = _pick_year(year)
+    excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
+    rows = read_contracts(excel_path=excel_path)
+    contracts = [r for r in rows if not r.get("annex_no")]
+    annexes = [r for r in rows if r.get("annex_no")]
+    sample = contracts[0] if contracts else (rows[0] if rows else None)
+    return JSONResponse(
+        {
+            "year": y,
+            "excel_path": str(excel_path),
+            "excel_exists": excel_path.exists(),
+            "rows": len(rows),
+            "contracts": len(contracts),
+            "annexes": len(annexes),
+            "sample": sample,
+        }
+    )
+
+
+def _pick_year(year: int | None) -> int:
+    if year:
+        return year
+
+    try:
+        years: list[int] = []
+        for p in STORAGE_EXCEL_DIR.glob("contracts_*.xlsx"):
+            m = re.match(r"contracts_(\d{4})\.xlsx$", p.name)
+            if m:
+                years.append(int(m.group(1)))
+        if years:
+            return max(years)
+    except Exception:
+        pass
+
+    return date.today().year
+
+
 def _pick_existing_dir(primary: Path, fallback: Path) -> Path:
     try:
         if primary.exists():
