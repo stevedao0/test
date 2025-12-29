@@ -7,7 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -898,7 +898,11 @@ def api_contracts_list(year: int | None = None, q: str | None = None):
 
 
 @app.get("/contracts", response_class=HTMLResponse)
-def contracts_list(request: Request, year: int | None = None, download: str | None = None, download2: str | None = None):
+def contracts_list(request: Request, response: Response, year: int | None = None, download: str | None = None, download2: str | None = None):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
     y = year or date.today().year
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
 
@@ -964,7 +968,11 @@ def contracts_list(request: Request, year: int | None = None, download: str | No
 
 
 @app.get("/annexes", response_class=HTMLResponse)
-def annexes_list(request: Request, year: int | None = None, download: str | None = None):
+def annexes_list(request: Request, response: Response, year: int | None = None, download: str | None = None):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
     y = year or date.today().year
     excel_path = STORAGE_EXCEL_DIR / f"contracts_{y}.xlsx"
 
