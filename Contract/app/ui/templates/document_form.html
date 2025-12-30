@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom: var(--space-8);">
+  <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--primary-50) 50%, var(--info-50) 100%); border-left: 4px solid var(--primary-500);">
+    <h1 class="card-title" style="display: flex; align-items: center; gap: var(--space-3); color: var(--primary-800);">
+      <svg style="width: 28px; height: 28px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Tạo hợp đồng / Phụ lục
+    </h1>
+    <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: var(--space-2) 0 0 0;">
+      📝 Chọn loại tài liệu và nhập thông tin để xuất Word + lưu Excel
+    </p>
+  </div>
+
+  <div class="card-body">
+    {% if error %}
+      <div class="alert alert-error">
+        <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        <div class="alert-content">
+          <div class="alert-message">{{ error }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="post" action="/documents" data-validate-form data-loading>
+      <!-- Toggle: Hợp đồng mới / Phụ lục -->
+      <div style="margin-bottom: var(--space-6);">
+        <label class="form-label" style="margin-bottom: var(--space-4); display: block;">
+          <svg style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          Loại tài liệu
+        </label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-4);">
+          <label class="radio-option" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border: 2px solid var(--border); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; background: var(--surface);">
+            <input type="radio" name="doc_type" value="contract" {% if doc_type != 'annex' %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" data-doc-type-toggle>
+            <svg style="width: 24px; height: 24px; color: var(--primary); flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <div>
+              <div style="font-weight: 600; font-size: var(--text-base);">Hợp đồng mới</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">Tạo hợp đồng từ đầu</div>
+            </div>
+          </label>
+          <label class="radio-option" style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border: 2px solid var(--border); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; background: var(--surface);">
+            <input type="radio" name="doc_type" value="annex" {% if doc_type == 'annex' %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;" data-doc-type-toggle>
+            <svg style="width: 24px; height: 24px; color: var(--primary); flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            <div>
+              <div style="font-weight: 600; font-size: var(--text-base);">Phụ lục</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">Thêm phụ lục từ hợp đồng có sẵn</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Section: Contract fields (show when doc_type = contract) -->
+      <div data-section="contract" style="{% if doc_type == 'annex' %}display: none;{% endif %}">
+        <div class="card" data-section="contract-info" style="margin-bottom: var(--space-6); border-left: 4px solid var(--info-500);">
+          <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--info-50) 100%);">
+            <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--info-800);">
+              <svg style="width: 20px; height: 20px; color: var(--info-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              📋 Thông tin hợp đồng
+            </h3>
+          </div>
+          <div class="card-body">
+            <!-- Ngày lập + Số hợp đồng + Lĩnh vực (3 cột bằng nhau) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(3, 1fr);">
+              <div class="form-group">
+                <label class="form-label" for="ngay_lap_hop_dong">
+                  Ngày lập hợp đồng <span class="required-indicator">*</span>
+                </label>
+                <input
+                  id="ngay_lap_hop_dong"
+                  name="ngay_lap_hop_dong"
+                  type="date"
+                  class="form-input"
+                  data-conditional-required="contract"
+                />
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="so_hop_dong_4">
+                  Số hợp đồng (4 số) <span class="required-indicator">*</span>
+                </label>
+                <input
+                  id="so_hop_dong_4"
+                  name="so_hop_dong_4"
+                  placeholder="0001"
+                  class="form-input"
+                  maxlength="4"
+                  data-conditional-required="contract"
+                />
+                <div class="input-help-text">Nhập 4 chữ số, ví dụ: 0001</div>
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="linh_vuc">Lĩnh vực</label>
+                <input
+                  id="linh_vuc"
+                  name="linh_vuc"
+                  value="{{ preview.linh_vuc or 'Sao chép trực tuyến' }}"
+                  class="form-input"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Annex fields (show when doc_type = annex) -->
+      <div data-section="annex" style="{% if doc_type != 'annex' %}display: none;{% endif %}">
+        <div class="card" data-section="annex-info" style="margin-bottom: var(--space-6); border-left: 4px solid var(--teal-500);">
+          <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--teal-50) 100%);">
+            <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--teal-800);">
+              <svg style="width: 20px; height: 20px; color: var(--teal-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+              📎 Thông tin phụ lục
+            </h3>
+          </div>
+          <div class="card-body">
+            <div style="display: grid; gap: var(--space-6);">
+              <div class="form-group">
+                <label class="form-label" for="contract_no">
+                  <svg style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                  Chọn hợp đồng gốc <span class="required-indicator">*</span>
+                </label>
+                <select id="contract_no" name="contract_no" class="form-input" data-conditional-required="annex">
+                  <option value="">-- Chọn hợp đồng có sẵn --</option>
+                  {% for r in contracts %}
+                    <option value="{{ r.contract_no }}" {% if selected_contract_no == r.contract_no %}selected{% endif %}>{{ r.contract_no }}{% if r.kenh_ten %} - {{ r.kenh_ten }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+                <div class="input-help-text">Chọn hợp đồng để tự động điền thông tin bên dưới</div>
+                <div class="input-error-text"></div>
+              </div>
+
+              <!-- Số phụ lục + Ngày ký phụ lục + Ngày ký HĐ gốc (3 cột bằng nhau) -->
+              <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(3, 1fr);">
+                <div class="form-group">
+                  <label class="form-label" for="annex_no">Số phụ lục</label>
+                  <input
+                    id="annex_no"
+                    name="annex_no"
+                    placeholder="PL001"
+                    class="form-input"
+                  />
+                  <div class="input-help-text">Bỏ trống nếu không có</div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="ngay_ky_phu_luc">
+                    Ngày ký phụ lục <span class="required-indicator">*</span>
+                  </label>
+                  <input
+                    id="ngay_ky_phu_luc"
+                    name="ngay_ky_phu_luc"
+                    type="date"
+                    value="{{ preview.ngay_ky_phu_luc or today }}"
+                    class="form-input"
+                    data-conditional-required="annex"
+                  />
+                  <div class="input-error-text"></div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="ngay_ky_hop_dong">
+                    Ngày ký HĐ gốc
+                  </label>
+                  <input
+                    id="ngay_ky_hop_dong"
+                    name="ngay_ky_hop_dong"
+                    type="date"
+                    value="{{ preview.ngay_lap_hop_dong or '' }}"
+                    class="form-input"
+                  />
+                  <div class="input-help-text">Tự động từ HĐ đã chọn</div>
+                  <div class="input-error-text"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Common fields -->
+      <div class="card" data-section="company-info" style="border-left: 4px solid var(--purple-500);">
+        <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--purple-50) 100%);">
+          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--purple-800);">
+            <svg style="width: 20px; height: 20px; color: var(--purple-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+            🏢 Thông tin đơn vị (Bên B)
+          </h3>
+        </div>
+        <div class="card-body">
+          <div style="display: grid; gap: var(--space-6);">
+            <!-- Row 1: Tên đơn vị (full width) -->
+            <div class="form-group">
+              <label class="form-label" for="don_vi_ten">Tên đơn vị</label>
+              <input
+                id="don_vi_ten"
+                name="don_vi_ten"
+                value="{{ preview.don_vi_ten or '' }}"
+                class="form-input"
+              />
+            </div>
+
+            <!-- Row 2: Mã số thuế + Địa chỉ (2 cột: 1fr + 2fr) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 2fr;">
+              <div class="form-group">
+                <label class="form-label" for="don_vi_mst">Mã số thuế</label>
+                <input
+                  id="don_vi_mst"
+                  name="don_vi_mst"
+                  value="{{ preview.don_vi_mst or '' }}"
+                  class="form-input"
+                  placeholder="0123456789"
+                  data-validate
+                />
+                <div class="input-help-text">10-14 chữ số</div>
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_dia_chi">Địa chỉ</label>
+                <input
+                  id="don_vi_dia_chi"
+                  name="don_vi_dia_chi"
+                  value="{{ preview.don_vi_dia_chi or '' }}"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <!-- Row 3: Điện thoại + Email + Người đại diện + Chức vụ (4 cột) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(4, 1fr);">
+              <div class="form-group">
+                <label class="form-label" for="don_vi_dien_thoai">Điện thoại</label>
+                <input
+                  id="don_vi_dien_thoai"
+                  name="don_vi_dien_thoai"
+                  value="{{ preview.don_vi_dien_thoai or '' }}"
+                  class="form-input"
+                  placeholder="0901234567"
+                  data-validate
+                />
+                <div class="input-help-text">Bắt đầu bằng 0, có 10-11 số</div>
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_email">Email</label>
+                <input
+                  id="don_vi_email"
+                  name="don_vi_email"
+                  type="email"
+                  value="{{ preview.don_vi_email or '' }}"
+                  class="form-input"
+                  placeholder="example@company.com"
+                  data-validate
+                />
+                <div class="input-error-text"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_nguoi_dai_dien">Người đại diện</label>
+                <input
+                  id="don_vi_nguoi_dai_dien"
+                  name="don_vi_nguoi_dai_dien"
+                  value="{{ preview.don_vi_nguoi_dai_dien or '' }}"
+                  class="form-input"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="don_vi_chuc_vu">Chức vụ</label>
+                <input
+                  id="don_vi_chuc_vu"
+                  name="don_vi_chuc_vu"
+                  value="{{ preview.don_vi_chuc_vu or 'Giám đốc' }}"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <!-- Row 4: Số CCCD + Ngày cấp CCCD (2 cột) -->
+            <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr;">
+              <div class="form-group">
+                <label class="form-label" for="so_CCCD">Số CCCD/CMND</label>
+                <input
+                  id="so_CCCD"
+                  name="so_CCCD"
+                  value="{{ preview.so_CCCD or '' }}"
+                  class="form-input"
+                  placeholder="001234567890"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="ngay_cap_CCCD">Ngày cấp CCCD</label>
+                <input
+                  id="ngay_cap_CCCD"
+                  name="ngay_cap_CCCD"
+                  value="{{ preview.ngay_cap_CCCD or '' }}"
+                  class="form-input"
+                  placeholder="01/01/2020"
+                />
+              </div>
+            </div>
+
+            <!-- Row 5: Email người thực hiện (full width) -->
+            <div class="form-group">
+              <label class="form-label" for="nguoi_thuc_hien_email">Email người thực hiện</label>
+              <input
+                id="nguoi_thuc_hien_email"
+                name="nguoi_thuc_hien_email"
+                type="email"
+                value="{{ preview.nguoi_thuc_hien_email or '' }}"
+                class="form-input"
+                placeholder="executor@company.com"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" data-section="channel-info" style="margin-top: var(--space-6); border-left: 4px solid var(--pink-500);">
+        <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--pink-50) 100%);">
+          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--pink-800);">
+            <svg style="width: 20px; height: 20px; color: var(--pink-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            📺 Thông tin kênh
+            <span style="font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; margin-left: var(--space-2);">(Tùy chọn)</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <!-- Tên kênh + ID/Link kênh (2 cột bằng nhau) -->
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr;">
+            <div class="form-group">
+              <label class="form-label" for="kenh_ten">Tên kênh</label>
+              <input
+                id="kenh_ten"
+                name="kenh_ten"
+                value="{{ preview.kenh_ten or '' }}"
+                placeholder="Ví dụ: Thanh Ngoc Official"
+                class="form-input"
+              />
+              <div class="input-help-text">Để trống nếu chưa có thông tin</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="kenh_id">ID/Link kênh</label>
+              <input
+                id="kenh_id"
+                name="kenh_id"
+                value="{{ preview.kenh_id or '' }}"
+                placeholder="UCxxxx hoặc https://youtube.com/channel/UCxxxx"
+                class="form-input"
+                data-validate
+              />
+              <div class="input-help-text">Để trống nếu chưa có thông tin</div>
+              <div class="input-error-text"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" data-section="finance-info" style="margin-top: var(--space-6); border-left: 4px solid var(--secondary-500);" data-money-calculator>
+        <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--secondary-50) 100%);">
+          <h3 style="font-size: var(--text-lg); margin: 0; display: flex; align-items: center; gap: var(--space-2); color: var(--secondary-800);">
+            <svg style="width: 20px; height: 20px; color: var(--secondary-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            💰 Thông tin tài chính
+            <span style="font-size: var(--text-sm); color: var(--text-secondary); font-weight: 400; margin-left: var(--space-2);">(Tùy chọn - để trống cho hợp đồng khung)</span>
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info" style="margin-bottom: var(--space-6); padding: var(--space-4); background: rgba(59, 130, 246, 0.05); border-left: 3px solid var(--primary); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: start; gap: var(--space-3);">
+              <svg style="width: 20px; height: 20px; color: var(--primary); flex-shrink: 0; margin-top: 2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary);">
+                <strong style="color: var(--text-primary);">Hợp đồng khung:</strong> Bạn có thể để trống số tiền nếu đây là hợp đồng khung (không có giá trị cố định). Số tiền sẽ được bổ sung khi tạo phụ lục.
+              </div>
+            </div>
+          </div>
+
+          <!-- Số tiền chưa VAT + Thuế % (2 cột bằng nhau) -->
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: 1fr 1fr;">
+            <div class="form-group">
+              <label class="form-label" for="so_tien_chua_GTGT">Số tiền chưa VAT (VNĐ)</label>
+              <div class="money-input-wrapper">
+                <input
+                  id="so_tien_chua_GTGT"
+                  name="so_tien_chua_GTGT"
+                  value="{{ preview.so_tien_chua_GTGT_text or '' }}"
+                  placeholder="15,600,000 (hoặc để trống)"
+                  class="form-input money-input"
+                  data-money-input
+                />
+                <span class="money-currency">VNĐ</span>
+              </div>
+              <div class="input-help-text">Để trống nếu đây là hợp đồng khung</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="thue_percent">Thuế GTGT (%)</label>
+              <input
+                id="thue_percent"
+                name="thue_percent"
+                type="number"
+                value="10"
+                min="0"
+                max="100"
+                class="form-input"
+                data-vat-input
+              />
+              <div class="input-help-text">Mặc định 10%</div>
+            </div>
+          </div>
+
+          <div class="money-calculator-preview">
+            <div class="preview-row">
+              <span>Số tiền chưa VAT:</span>
+              <strong data-preview-pre-vat>{{ preview.so_tien_chua_GTGT_text or '0' }} VNĐ</strong>
+            </div>
+            <div class="preview-row">
+              <span>Thuế GTGT:</span>
+              <strong data-preview-vat>{{ preview.thue_GTGT_text or '0' }} VNĐ</strong>
+            </div>
+            <div class="preview-row preview-total">
+              <span>Tổng cộng:</span>
+              <strong data-preview-total>{{ preview.so_tien_text or preview.so_tien_nhuan_but_text or '0' }} VNĐ</strong>
+            </div>
+            <div class="preview-row">
+              <span style="font-size: var(--text-sm);">Bằng chữ:</span>
+              <em data-preview-words style="color: var(--text-tertiary);">{{ preview.so_tien_bang_chu or 'Không đồng' }}</em>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: var(--space-8); display: flex; align-items: center; gap: var(--space-4);">
+        <button type="submit" class="btn btn-primary btn-lg" data-submit-btn>
+          <span class="btn-spinner">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"/>
+              <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+            </svg>
+          </span>
+          <span class="btn-text">Xuất Word + Lưu Excel</span>
+        </button>
+        <a href="/contracts" class="btn btn-secondary">Danh sách hợp đồng</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card" style="border-left: 4px solid var(--warning-500);">
+  <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--warning-50) 100%);">
+    <h3 class="card-title" style="font-size: var(--text-lg); display: flex; align-items: center; gap: var(--space-2); color: var(--warning-800);">
+      <svg style="width: 20px; height: 20px; color: var(--warning-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      📌 Ghi chú
+    </h3>
+  </div>
+  <div class="card-body">
+    <ul style="list-style: none; padding-left: 0; font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-relaxed);">
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--primary-600);">●</span><div><strong style="color: var(--text-primary);">Hợp đồng mới:</strong> Số hợp đồng đầy đủ sẽ là <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">0001/YYYY/HĐQTGAN-PN/MR</code></div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--secondary-600);">●</span><div><strong style="color: var(--text-primary);">Hợp đồng khung:</strong> Để trống số tiền nếu muốn tạo hợp đồng khung (không có giá trị cố định). Số tiền sẽ được bổ sung khi tạo phụ lục</div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--info-600);">●</span><div><strong style="color: var(--text-primary);">Thông tin tùy chọn:</strong> Tên kênh, ID/Link kênh, và số tiền đều có thể để trống nếu chưa có thông tin</div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--teal-600);">●</span><div><strong style="color: var(--text-primary);">Phụ lục:</strong> Chọn hợp đồng có sẵn (kể cả hợp đồng khung), dữ liệu sẽ tự động điền. Bạn có thể nhập số tiền mới cho phụ lục</div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--purple-600);">●</span><div>File Word xuất ra sẽ lưu vào thư mục <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">storage/docx</code></div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--pink-600);">●</span><div>Excel sẽ lưu theo năm vào <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">storage/excel</code></div></li>
+      <li style="padding: var(--space-2) 0; display: flex; gap: var(--space-2);"><span style="color: var(--warning-600);">●</span><div>Số tiền sẽ tự động được format và chuyển thành chữ tiếng Việt</div></li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  (function () {
+    // Toggle between contract and annex
+    const radios = document.querySelectorAll('[data-doc-type-toggle]');
+    const contractSection = document.querySelector('[data-section="contract"]');
+    const annexSection = document.querySelector('[data-section="annex"]');
+
+    function updateSections() {
+      const docType = document.querySelector('[name="doc_type"]:checked')?.value || 'contract';
+
+      if (docType === 'contract') {
+        contractSection.style.display = 'block';
+        annexSection.style.display = 'none';
+        document.querySelectorAll('[data-conditional-required="contract"]').forEach(el => el.required = true);
+        document.querySelectorAll('[data-conditional-required="annex"]').forEach(el => el.required = false);
+      } else {
+        contractSection.style.display = 'none';
+        annexSection.style.display = 'block';
+        document.querySelectorAll('[data-conditional-required="contract"]').forEach(el => el.required = false);
+        document.querySelectorAll('[data-conditional-required="annex"]').forEach(el => el.required = true);
+      }
+
+      // Update radio styling with smooth transition
+      document.querySelectorAll('.radio-option').forEach(opt => {
+        const radio = opt.querySelector('input[type="radio"]');
+        if (radio && radio.checked) {
+          opt.style.borderColor = 'var(--primary)';
+          opt.style.background = 'rgba(59, 130, 246, 0.08)';
+          opt.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        } else {
+          opt.style.borderColor = 'var(--border)';
+          opt.style.background = 'var(--surface)';
+          opt.style.boxShadow = 'none';
+        }
+      });
+    }
+
+    radios.forEach(radio => {
+      radio.addEventListener('change', updateSections);
+    });
+
+    updateSections();
+
+    // Auto-reload when selecting contract for annex
+    const contractSelect = document.getElementById('contract_no');
+    if (contractSelect) {
+      contractSelect.addEventListener('change', function () {
+        const v = contractSelect.value || '';
+        const params = new URLSearchParams(window.location.search);
+        params.set('doc_type', 'annex');
+        params.set('year', '{{ year }}');
+        if (v) {
+          params.set('contract_no', v);
+        } else {
+          params.delete('contract_no');
+        }
+        window.location.href = '/documents/new?' + params.toString();
+      });
+    }
+  })();
+</script>
+{% endblock %}
