@@ -1,0 +1,4 @@
+[submodule "Contract/app/ui"]
+	path = Contract/app/ui
+	url = https://github.com/stevedao0/ui-app.git
+	branch = main
