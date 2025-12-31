@@ -1,6 +1,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .table thead {
@@ -31,7 +32,7 @@
 
 .table tbody tr:hover {
   background: linear-gradient(135deg, var(--primary-50) 0%, var(--info-50) 100%);
-  transform: scale(1.002);
+  transform: none;
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2), inset 0 0 0 1px rgba(59, 130, 246, 0.1);
   cursor: pointer;
 }

@@ -6,7 +6,6 @@
     <title>{{ title or "Contract Pilot" }}</title>
     <link rel="stylesheet" href="/static/css/main.css" />
     <link rel="stylesheet" href="/static/css/advanced-features.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
     <div class="app-layout">
@@ -37,15 +36,6 @@
           </a>
           {% endif %}
 
-          {% if has_permission(request, 'contracts.create') or has_permission(request, 'annexes.create') %}
-          <a href="/documents/new" class="sidebar-link" data-nav="documents">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Tạo tài liệu</span>
-          </a>
-          {% endif %}
-
           {% if has_permission(request, 'works.read') %}
           <a href="/works" class="sidebar-link" data-nav="works">
             <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,31 +44,6 @@
             <span>Tác phẩm</span>
           </a>
           {% endif %}
-
-          {% if has_permission(request, 'works.import') %}
-          <a href="/works/import" class="sidebar-link" data-nav="works-import">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <span>Import danh mục</span>
-          </a>
-          {% endif %}
-
-          {% if has_permission(request, 'reports.view') %}
-          <a href="/reports" class="sidebar-link" data-nav="reports">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            <span>Báo cáo</span>
-          </a>
-          {% endif %}
-
-          <a href="/search" class="sidebar-link" data-nav="search">
-            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
-            </svg>
-            <span>Tìm kiếm</span>
-          </a>
 
           <div class="sidebar-divider"></div>
 
@@ -97,6 +62,35 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <span>Tạo phụ lục</span>
+          </a>
+          {% endif %}
+
+          {% if has_permission(request, 'catalogue.upload') %}
+          <a href="/catalogue/upload" class="sidebar-link" data-nav="catalogue-upload">
+            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span>Upload danh mục</span>
+          </a>
+          {% endif %}
+
+          <div class="sidebar-divider"></div>
+
+          {% if has_permission(request, 'reports.view') %}
+          <a href="/reports" class="sidebar-link" data-nav="reports">
+            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span>Báo cáo</span>
+          </a>
+          {% endif %}
+
+          {% if has_permission(request, 'portal.access') %}
+          <a href="/search" class="sidebar-link" data-nav="search">
+            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.5 10.5a7.5 7.5 0 0013.15 6.15z" />
+            </svg>
+            <span>Tìm kiếm</span>
           </a>
           {% endif %}
 
@@ -193,5 +187,6 @@
     <script src="/static/js/table-enhanced.js"></script>
     <script src="/static/js/main.js"></script>
     <script src="/static/js/advanced-features.js"></script>
+    <script src="/static/js/advanced-features-enhanced.js"></script>
   </body>
 </html>

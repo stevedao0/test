@@ -17,7 +17,7 @@ body {
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   color: var(--text-primary);
-  background: linear-gradient(to bottom, #F8FAFC 0%, #EFF6FF 100%);
+  background: linear-gradient(135deg, #F9FAFB 0%, #EFF6FF 50%, #E0F2FE 100%);
   background-attachment: fixed;
   min-height: 100vh;
 }

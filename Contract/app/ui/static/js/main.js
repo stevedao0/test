@@ -38,6 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✓ Dropdowns initialized');
   }
 
+  if (typeof initActionDropdownsOnce === 'function') {
+    initActionDropdownsOnce();
+    console.log('✓ Action dropdowns initialized');
+  }
+
   if (typeof initModals === 'function') {
     initModals();
     console.log('✓ Modals initialized');

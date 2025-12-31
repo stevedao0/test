@@ -34,6 +34,50 @@ function initDropdowns() {
   });
 }
 
+function toggleDropdown(button, e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+  const dropdown = button.closest('.actions-dropdown');
+  if (!dropdown) return;
+  const menu = dropdown.querySelector('.dropdown-menu');
+  if (!menu) return;
+
+  const isCurrentlyOpen = menu.classList.contains('show');
+
+  document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+    m.classList.remove('show');
+  });
+
+  if (!isCurrentlyOpen) {
+    menu.classList.add('show');
+  }
+}
+
+function initActionDropdownsOnce() {
+  if (typeof window === 'undefined') return;
+  if (window.__actionDropdownsInitialized) return;
+  window.__actionDropdownsInitialized = true;
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.actions-dropdown')) {
+      document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+        m.classList.remove('show');
+      });
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.dropdown-menu.show').forEach(m => {
+        m.classList.remove('show');
+      });
+    }
+  });
+}
+
 function initModals() {
   document.querySelectorAll('[data-modal-trigger]').forEach(trigger => {
     trigger.addEventListener('click', (e) => {
@@ -137,6 +181,8 @@ function formatDate(dateString) {
 
 if (typeof window !== 'undefined') {
   window.initDropdowns = initDropdowns;
+  window.toggleDropdown = toggleDropdown;
+  window.initActionDropdownsOnce = initActionDropdownsOnce;
   window.initModals = initModals;
   window.initLoadingStates = initLoadingStates;
   window.openModal = openModal;

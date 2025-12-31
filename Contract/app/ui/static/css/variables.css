@@ -129,20 +129,22 @@
   --text-on-warning: var(--warning-900);
   --text-on-error: #FFFFFF;
 
-  /* Background Colors - Soft and easy on eyes */
-  --bg-page: #F8FAFC;
+  /* Background Colors - Modern and professional */
+  --bg-page: #F9FAFB;
+  --bg-primary: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-elevated: #FFFFFF;
-  --bg-hover: #F1F5F9;
+  --bg-hover: #F3F4F6;
   --bg-selected: var(--primary-50);
-  --bg-secondary: #F8FAFC;
+  --bg-secondary: #F9FAFB;
   --bg-accent: #F0F9FF;
-  --bg-muted: #F1F5F9;
+  --bg-muted: #F3F4F6;
 
   /* Border Colors */
-  --border-light: #E2E8F0;
-  --border-default: #CBD5E1;
-  --border-strong: #94A3B8;
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --border-default: #D1D5DB;
+  --border-strong: #9CA3AF;
   --border-focus: var(--primary-500);
   --border-error: var(--error-500);
 

@@ -1,9 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
-  <div class="card-header" style="border-left: 4px solid var(--primary-500);">
-    <h1 class="card-title">Ma trận phân quyền</h1>
-    <p style="color: var(--text-secondary); margin-top: var(--space-2);">Chọn user và bật/tắt quyền bằng Allow/Deny. Nếu không set override thì quyền sẽ theo role mặc định.</p>
+<div class="card" style="overflow: visible;">
+  <div class="card-header" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(255, 255, 255, 1) 100%); border-bottom: 2px solid var(--primary-200); padding: var(--space-8);">
+    <div style="display: flex; align-items: center; gap: var(--space-4);">
+      <div class="icon-container icon-container-primary" style="width: 56px; height: 56px;">
+        <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="card-title" style="margin: 0; font-size: var(--text-3xl); color: var(--primary-800);">Ma trận phân quyền</h1>
+        <p style="color: var(--text-secondary); margin-top: var(--space-1); font-size: var(--text-sm);">
+          Chọn user và bật/tắt quyền bằng Allow/Deny. Nếu không set override thì quyền sẽ theo role mặc định.
+        </p>
+      </div>
+    </div>
   </div>
 
   <div class="card-body">
@@ -23,72 +34,103 @@
       </div>
     {% endif %}
 
-    <div style="display: grid; gap: var(--space-6); grid-template-columns: 360px 1fr;">
-      <div class="card" style="border-left: 4px solid var(--secondary-500);">
-        <div class="card-header">
-          <h3 style="margin: 0;">Chọn user</h3>
+    <div style="display: grid; gap: var(--space-8); grid-template-columns: 380px 1fr;">
+      <div class="card" style="background: linear-gradient(135deg, var(--secondary-50) 0%, white 100%); border: 2px solid var(--secondary-200); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);">
+        <div class="card-header" style="background: linear-gradient(135deg, var(--secondary-100) 0%, var(--secondary-50) 100%); border-bottom: 2px solid var(--secondary-300); padding: var(--space-6);">
+          <div style="display: flex; align-items: center; gap: var(--space-3);">
+            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--secondary-500), var(--secondary-600)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);">
+              <svg style="width: 20px; height: 20px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h3 style="margin: 0; color: var(--secondary-800); font-size: var(--text-lg);">Chọn user</h3>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label class="form-label">User</label>
-            <select class="form-input" id="permUserSelect" style="width: 100%;">
+        <div class="card-body" style="padding: var(--space-6);">
+          <div class="form-group" style="margin-bottom: var(--space-6);">
+            <label class="form-label" style="font-weight: var(--font-semibold);">User</label>
+            <select class="form-input" id="permUserSelect" style="width: 100%; padding: var(--space-4); font-size: var(--text-base); border: 2px solid var(--secondary-300); font-weight: var(--font-medium);">
               {% for u in users %}
                 <option value="{{ u.username }}">{{ u.username }} ({{ u.role }})</option>
               {% endfor %}
             </select>
           </div>
-          <div style="color: var(--text-secondary); font-size: var(--text-sm);">
-            Tip: admin có tất cả quyền theo role, nhưng vẫn có thể Deny bằng override.
+          <div style="padding: var(--space-4); background: linear-gradient(135deg, var(--info-50) 0%, white 100%); border-left: 3px solid var(--info-500); border-radius: var(--radius-md);">
+            <div style="display: flex; gap: var(--space-2); align-items: flex-start;">
+              <svg style="width: 20px; height: 20px; color: var(--info-600); flex-shrink: 0; margin-top: 2px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div style="color: var(--info-800); font-size: var(--text-sm); line-height: 1.6;">
+                <strong>Tip:</strong> Admin có tất cả quyền theo role, nhưng vẫn có thể Deny bằng override.
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="card" style="border-left: 4px solid var(--info-500);">
-        <div class="card-header">
-          <h3 style="margin: 0;">Cập nhật quyền</h3>
-        </div>
-        <div class="card-body">
-          <form method="post" action="/admin/permissions" data-loading>
-            <input type="hidden" name="target_username" id="targetUsername" value="" />
+      <div>
+        <form method="post" action="/admin/permissions" data-loading>
+          <input type="hidden" name="target_username" id="targetUsername" value="" />
 
-            <script type="application/json" id="overridesData">{{ overrides | tojson }}</script>
+          <script type="application/json" id="overridesData">{{ overrides | tojson }}</script>
 
-            <div style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
-              {% for group, perms in permission_groups.items() %}
-                <div class="card" style="border: 1px solid var(--border-color);">
-                  <div class="card-header" style="padding: var(--space-4);">
-                    <strong>{{ group }}</strong>
+          <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+            {% set colors = {'Hợp đồng': 'primary', 'Tác phẩm': 'teal', 'Admin': 'warning', 'Báo cáo': 'info'} %}
+            {% for group, perms in permission_groups.items() %}
+              {% set color = colors.get(group, 'primary') %}
+              <div class="card" style="background: linear-gradient(135deg, var(--{{ color }}-50) 0%, white 100%); border: 2px solid var(--{{ color }}-200); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); overflow: visible;">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--{{ color }}-100) 0%, var(--{{ color }}-50) 100%); border-bottom: 2px solid var(--{{ color }}-300); padding: var(--space-5);">
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div style="width: 36px; height: 36px; background: linear-gradient(135deg, var(--{{ color }}-500), var(--{{ color }}-600)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                      <svg style="width: 18px; height: 18px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <strong style="color: var(--{{ color }}-800); font-size: var(--text-base);">{{ group }}</strong>
                   </div>
-                  <div class="card-body" style="padding: var(--space-4);">
-                    <div style="display:flex; flex-direction: column; gap: var(--space-3);">
-                      {% for p in perms %}
-                        <div style="display:flex; align-items: center; justify-content: space-between; gap: var(--space-3);">
-                          <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: var(--text-sm);">
+                </div>
+                <div class="card-body" style="padding: var(--space-5);">
+                  <div style="display:flex; flex-direction: column; gap: var(--space-4);">
+                    {% for p in perms %}
+                      <div style="padding: var(--space-3); background: white; border-radius: var(--radius-md); border: 1px solid var(--{{ color }}-200); transition: all var(--transition-base);" onmouseover="this.style.borderColor='var(--{{ color }}-400)'; this.style.boxShadow='0 2px 8px rgba(59, 130, 246, 0.1)'" onmouseout="this.style.borderColor='var(--{{ color }}-200)'; this.style.boxShadow='none'">
+                        <div style="display:flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap;">
+                          <div style="font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace; font-size: var(--text-xs); color: var(--{{ color }}-800); font-weight: var(--font-medium); flex: 1; min-width: 120px;">
                             {{ p }}
                           </div>
-                          <div style="display:flex; gap: var(--space-2); align-items:center;">
-                            <label style="display:flex; gap: 6px; align-items:center; font-size: var(--text-sm);">
-                              <input type="checkbox" name="perms_allow" value="{{ p }}" data-perm="{{ p }}" data-kind="allow" />
-                              Allow
+                          <div style="display:flex; gap: var(--space-3); align-items:center;">
+                            <label style="display:flex; gap: var(--space-2); align-items:center; font-size: var(--text-sm); padding: var(--space-2) var(--space-3); background: var(--secondary-50); border: 1px solid var(--secondary-300); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); font-weight: var(--font-medium);" onmouseover="this.style.background='var(--secondary-100)'; this.style.borderColor='var(--secondary-400)'" onmouseout="this.style.background='var(--secondary-50)'; this.style.borderColor='var(--secondary-300)'">
+                              <input type="checkbox" name="perms_allow" value="{{ p }}" data-perm="{{ p }}" data-kind="allow" style="width: 16px; height: 16px; cursor: pointer;" />
+                              <span style="color: var(--secondary-800);">Allow</span>
                             </label>
-                            <label style="display:flex; gap: 6px; align-items:center; font-size: var(--text-sm); color: var(--error-700);">
-                              <input type="checkbox" name="perms_deny" value="{{ p }}" data-perm="{{ p }}" data-kind="deny" />
-                              Deny
+                            <label style="display:flex; gap: var(--space-2); align-items:center; font-size: var(--text-sm); padding: var(--space-2) var(--space-3); background: var(--error-50); border: 1px solid var(--error-300); border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-fast); font-weight: var(--font-medium);" onmouseover="this.style.background='var(--error-100)'; this.style.borderColor='var(--error-400)'" onmouseout="this.style.background='var(--error-50)'; this.style.borderColor='var(--error-300)'">
+                              <input type="checkbox" name="perms_deny" value="{{ p }}" data-perm="{{ p }}" data-kind="deny" style="width: 16px; height: 16px; cursor: pointer;" />
+                              <span style="color: var(--error-800);">Deny</span>
                             </label>
                           </div>
                         </div>
-                      {% endfor %}
-                    </div>
+                      </div>
+                    {% endfor %}
                   </div>
                 </div>
-              {% endfor %}
-            </div>
+              </div>
+            {% endfor %}
+          </div>
 
-            <div style="display:flex; gap: var(--space-3); margin-top: var(--space-6);">
-              <button class="btn btn-primary" type="submit">Lưu quyền</button>
-              <a class="btn btn-secondary" href="/admin/users">Quay lại quản lý user</a>
-            </div>
-          </form>
+          <div style="display:flex; gap: var(--space-3); margin-top: var(--space-8); padding-top: var(--space-6); border-top: 2px solid var(--border);">
+            <button class="btn btn-primary" type="submit" style="display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-8);">
+              <svg style="width: 20px; height: 20px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Lưu quyền
+            </button>
+            <a class="btn btn-secondary" href="/admin/users" style="display: inline-flex; align-items: center; gap: var(--space-2);">
+              <svg style="width: 20px; height: 20px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Quay lại
+            </a>
+          </div>
+        </form>
 
           <script>
             (function() {

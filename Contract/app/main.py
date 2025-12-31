@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, Response
+from fastapi.encoders import jsonable_encoder
 from starlette import status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -52,10 +53,27 @@ app = FastAPI()
 async def _http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == status.HTTP_401_UNAUTHORIZED:
         accept = (request.headers.get("accept") or "").lower()
-        if "text/html" in accept and not request.url.path.startswith("/login"):
+        sec_fetch_dest = (request.headers.get("sec-fetch-dest") or "").lower()
+        wants_html = ("text/html" in accept) or (sec_fetch_dest == "document")
+        if wants_html and not request.url.path.startswith("/login"):
             nxt = quote(str(request.url.path) + (f"?{request.url.query}" if request.url.query else ""), safe="/")
             return RedirectResponse(url=f"/login?next={nxt}", status_code=303)
         return JSONResponse({"success": False, "error": exc.detail or "Unauthorized"}, status_code=exc.status_code)
+
+    accept = (request.headers.get("accept") or "").lower()
+    sec_fetch_dest = (request.headers.get("sec-fetch-dest") or "").lower()
+    wants_html = ("text/html" in accept) or (sec_fetch_dest == "document")
+    if wants_html and exc.status_code in (status.HTTP_403_FORBIDDEN, status.HTTP_410_GONE):
+        detail = exc.detail or ("Forbidden" if exc.status_code == status.HTTP_403_FORBIDDEN else "Gone")
+        html = (
+            "<!doctype html><html lang=\"vi\"><head><meta charset=\"utf-8\">"
+            "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+            f"<title>{exc.status_code}</title></head><body style=\"font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px;\">"
+            f"<h1 style=\"margin:0 0 8px 0;\">{exc.status_code}</h1>"
+            f"<p style=\"margin:0; color:#444;\">{detail}</p>"
+            "</body></html>"
+        )
+        return HTMLResponse(content=html, status_code=exc.status_code)
     return JSONResponse({"success": False, "error": exc.detail}, status_code=exc.status_code)
 
 
@@ -77,41 +95,18 @@ def debug_contracts(year: int | None = None):
     contracts = [r for r in rows if not r.get("annex_no")]
     annexes = [r for r in rows if r.get("annex_no")]
     sample = contracts[0] if contracts else (rows[0] if rows else None)
-    return JSONResponse(
-        {
-            "year": y,
-            "db_path": str(DB_PATH),
-            "db_exists": _db_available(),
-            "rows": len(rows),
-            "contracts": len(contracts),
-            "annexes": len(annexes),
-            "sample": sample,
-        }
-    )
-
-
-@app.get("/catalogue/upload", response_class=HTMLResponse)
-def catalogue_upload_form(
-    request: Request,
-    year: int | None = None,
-    contract_no: str | None = None,
-    annex_no: str | None = None,
-    error: str | None = None,
-    message: str | None = None,
-):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.post("/catalogue/upload")
-async def catalogue_upload_submit(
-    request: Request,
-    year: int = Form(...),
-    contract_no: str = Form(...),
-    annex_no: str = Form(""),
-    catalogue_file: UploadFile = File(...),
-    user: UserRow = Depends(require_role("admin", "mod")),
-):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
+    annex_sample = annexes[0] if annexes else None
+    payload = {
+        "year": y,
+        "db_path": str(DB_PATH),
+        "db_exists": _db_available(),
+        "rows": len(rows),
+        "contracts": len(contracts),
+        "annexes": len(annexes),
+        "sample": sample,
+        "annex_sample": annex_sample,
+    }
+    return JSONResponse(jsonable_encoder(payload))
 
 
 def _pick_year(year: int | None) -> int:

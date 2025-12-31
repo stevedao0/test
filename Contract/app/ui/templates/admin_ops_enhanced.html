@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Hero Section -->
+<div class="card" style="margin-bottom: var(--space-6); border-left: 4px solid var(--purple-500); background: linear-gradient(135deg, white 0%, var(--purple-50) 100%);">
+  <div class="card-header" style="background: transparent; border: none;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4);">
+      <div>
+        <h1 style="font-size: var(--text-3xl); font-weight: 700; color: var(--purple-900); margin: 0; display: flex; align-items: center; gap: var(--space-3);">
+          <div class="icon-container icon-container-purple" style="width: 48px; height: 48px;">
+            <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          Admin Operations
+        </h1>
+        <p style="color: var(--text-secondary); margin-top: var(--space-2);">🛠️ Quản trị hệ thống, xem logs, backups và system info</p>
+      </div>
+      <span class="badge badge-purple" style="font-size: var(--text-base); padding: var(--space-3) var(--space-5);">Admin Only</span>
+    </div>
+  </div>
+</div>
+
+<!-- System Stats -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
+  <div class="card stats-card-primary">
+    <div class="card-body">
+      <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-primary" style="width: 48px; height: 48px;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase;">Log Files</div>
+          <div style="font-size: var(--text-sm); color: var(--primary-600); font-weight: var(--font-semibold);">System Logs</div>
+        </div>
+      </div>
+      <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--primary-700);">{{ logs|length }}</div>
+      <div style="font-size: var(--text-sm); color: var(--text-secondary);">file(s) available</div>
+    </div>
+  </div>
+
+  <div class="card stats-card-success">
+    <div class="card-body">
+      <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-success" style="width: 48px; height: 48px;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase;">Backups</div>
+          <div style="font-size: var(--text-sm); color: var(--secondary-600); font-weight: var(--font-semibold);">Database</div>
+        </div>
+      </div>
+      <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--secondary-700);">{{ backups|length }}</div>
+      <div style="font-size: var(--text-sm); color: var(--text-secondary);">backup(s) available</div>
+    </div>
+  </div>
+
+  <div class="card stats-card-info">
+    <div class="card-body">
+      <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-info" style="width: 48px; height: 48px;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase;">System</div>
+          <div style="font-size: var(--text-sm); color: var(--info-600); font-weight: var(--font-semibold);">Status</div>
+        </div>
+      </div>
+      <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--secondary-700); display: flex; align-items: center; gap: var(--space-2);">
+        <span class="status-dot status-dot-success"></span>
+        Online
+      </div>
+      <div style="font-size: var(--text-sm); color: var(--text-secondary);">All services running</div>
+    </div>
+  </div>
+
+  <div class="card stats-card-warning">
+    <div class="card-body">
+      <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-warning" style="width: 48px; height: 48px;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase;">Uptime</div>
+          <div style="font-size: var(--text-sm); color: var(--warning-600); font-weight: var(--font-semibold);">Server Time</div>
+        </div>
+      </div>
+      <div style="font-size: var(--text-2xl); font-weight: 700; color: var(--warning-700);" id="serverTime">--:--:--</div>
+      <div style="font-size: var(--text-sm); color: var(--text-secondary);">Current server time</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6);">
+  <!-- Logs Section -->
+  <div class="card" style="border-left: 4px solid var(--primary-500);">
+    <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--primary-50) 100%);">
+      <h2 style="font-size: var(--text-xl); font-weight: 600; color: var(--primary-900); margin: 0; display: flex; align-items: center; gap: var(--space-3);">
+        <svg style="width: 24px; height: 24px; color: var(--primary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        System Logs
+      </h2>
+    </div>
+    <div class="card-body">
+      {% if logs and logs|length > 0 %}
+        <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+          <table class="table" style="width: 100%;">
+            <thead style="position: sticky; top: 0; z-index: 10;">
+              <tr>
+                <th style="width: 40px;"></th>
+                <th>File Name</th>
+                <th style="text-align: right; width: 100px;">Size</th>
+                <th style="text-align: center; width: 120px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in logs %}
+              <tr>
+                <td style="text-align: center;">
+                  <div style="width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary-400), var(--primary-600)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <svg style="width: 16px; height: 16px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-family: ui-monospace, monospace; font-size: var(--text-sm); font-weight: 500;" data-copy="{{ f.name }}">{{ f.name }}</div>
+                </td>
+                <td style="text-align: right;">
+                  <span class="label-primary">{{ f.size }}</span>
+                </td>
+                <td style="text-align: center;">
+                  <a class="btn btn-sm btn-primary" href="/admin/ops/download/logs/{{ f.name }}">
+                    <svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state" style="padding: var(--space-12);">
+          <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <div class="empty-state-title">Chưa có log files</div>
+          <div class="empty-state-description">System logs sẽ xuất hiện ở đây</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Backups Section -->
+  <div class="card" style="border-left: 4px solid var(--secondary-500);">
+    <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--secondary-50) 100%);">
+      <h2 style="font-size: var(--text-xl); font-weight: 600; color: var(--secondary-900); margin: 0; display: flex; align-items: center; gap: var(--space-3);">
+        <svg style="width: 24px; height: 24px; color: var(--secondary-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+        </svg>
+        Database Backups
+      </h2>
+    </div>
+    <div class="card-body">
+      {% if backups and backups|length > 0 %}
+        <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+          <table class="table" style="width: 100%;">
+            <thead style="position: sticky; top: 0; z-index: 10;">
+              <tr>
+                <th style="width: 40px;"></th>
+                <th>File Name</th>
+                <th style="text-align: right; width: 100px;">Size</th>
+                <th style="text-align: center; width: 120px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in backups %}
+              <tr>
+                <td style="text-align: center;">
+                  <div style="width: 32px; height: 32px; background: linear-gradient(135deg, var(--secondary-400), var(--secondary-600)); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <svg style="width: 16px; height: 16px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-family: ui-monospace, monospace; font-size: var(--text-sm); font-weight: 500;" data-copy="{{ f.name }}">{{ f.name }}</div>
+                </td>
+                <td style="text-align: right;">
+                  <span class="label-success">{{ f.size }}</span>
+                </td>
+                <td style="text-align: center;">
+                  <a class="btn btn-sm btn-success" href="/admin/ops/download/backups/{{ f.name }}">
+                    <svg style="width: 14px; height: 14px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state" style="padding: var(--space-12);">
+          <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+          <div class="empty-state-title">Chưa có backup</div>
+          <div class="empty-state-description">Database backups sẽ xuất hiện ở đây</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- System Info Section -->
+<div class="card" style="margin-top: var(--space-6); border-left: 4px solid var(--info-500);">
+  <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--info-50) 100%);">
+    <h2 style="font-size: var(--text-xl); font-weight: 600; color: var(--info-900); margin: 0; display: flex; align-items: center; gap: var(--space-3);">
+      <svg style="width: 24px; height: 24px; color: var(--info-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      System Information
+    </h2>
+  </div>
+  <div class="card-body">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-6);">
+      <div style="padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-lg); border-left: 3px solid var(--primary-500);">
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-2);">Application</div>
+        <div style="font-size: var(--text-lg); font-weight: 600; color: var(--text-primary);">Contract Pilot v2.0</div>
+      </div>
+      <div style="padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-lg); border-left: 3px solid var(--secondary-500);">
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-2);">Environment</div>
+        <div style="font-size: var(--text-lg); font-weight: 600; color: var(--text-primary);">Production</div>
+      </div>
+      <div style="padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-lg); border-left: 3px solid var(--warning-500);">
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-2);">Python Version</div>
+        <div style="font-size: var(--text-lg); font-weight: 600; color: var(--text-primary);">3.11+</div>
+      </div>
+      <div style="padding: var(--space-4); background: var(--bg-secondary); border-radius: var(--radius-lg); border-left: 3px solid var(--info-500);">
+        <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-2);">Framework</div>
+        <div style="font-size: var(--text-lg); font-weight: 600; color: var(--text-primary);">FastAPI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Update server time
+function updateServerTime() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('vi-VN');
+  document.getElementById('serverTime').textContent = timeStr;
+}
+updateServerTime();
+setInterval(updateServerTime, 1000);
+</script>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Hero Stats Section với màu sắc phong phú -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
+  <!-- Total Contracts Card -->
+  <div class="card stats-card-primary" style="position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-primary">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <span class="badge badge-blue">{{ year }}</span>
+      </div>
+      <div class="stats-value text-primary" data-counter="{{ stats.contracts_count }}">{{ stats.contracts_count }}</div>
+      <div class="stats-label">Tổng số hợp đồng</div>
+      <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--primary-200);">
+        <a href="/contracts?year={{ year }}" class="quick-action-btn" style="width: 100%; justify-content: center;">
+          <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Xem chi tiết
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Annexes Card -->
+  <div class="card stats-card-teal" style="position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(20, 184, 166, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-teal">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <span class="badge badge-teal">Phụ lục</span>
+      </div>
+      <div class="stats-value text-info" data-counter="{{ stats.annexes_count }}">{{ stats.annexes_count }}</div>
+      <div class="stats-label">Tổng số phụ lục</div>
+      <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--teal-200);">
+        <a href="/annexes?year={{ year }}" class="quick-action-btn" style="width: 100%; justify-content: center;">
+          <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Xem chi tiết
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Works Card -->
+  <div class="card stats-card-warning" style="position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
+    <div class="card-body" style="padding: var(--space-6); position: relative; z-index: 1;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-warning">
+          <svg style="width: 28px; height: 28px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </div>
+        <span class="badge badge-orange">Tác phẩm</span>
+      </div>
+      <div class="stats-value text-warning" data-counter="{{ stats.works_count }}">{{ stats.works_count }}</div>
+      <div class="stats-label">Tổng số tác phẩm</div>
+      <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--warning-200);">
+        <a href="/works?year={{ year }}" class="quick-action-btn" style="width: 100%; justify-content: center;">
+          <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Xem chi tiết
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Stats với màu sắc nổi bật -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-6); margin-bottom: var(--space-8);">
+  <!-- Contracts Value -->
+  <div class="card stats-card-success" style="border-left: 4px solid var(--secondary-500);">
+    <div class="card-body">
+      <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-success" style="width: 48px; height: 48px;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Hợp đồng</div>
+          <div style="font-size: var(--text-sm); color: var(--secondary-600); font-weight: var(--font-semibold);">Tổng giá trị</div>
+        </div>
+      </div>
+      <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--secondary-700); margin-bottom: var(--space-2);" data-copy="{{ '{:,}'.format(stats.contracts_total_value).replace(',', '.') }}">
+        {{ "{:,}".format(stats.contracts_total_value).replace(",", ".") }}
+      </div>
+      <div style="font-size: var(--text-sm); color: var(--text-secondary);">đồng</div>
+    </div>
+  </div>
+
+  <!-- Annexes Value -->
+  <div class="card stats-card-info" style="border-left: 4px solid var(--info-500);">
+    <div class="card-body">
+      <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4);">
+        <div class="icon-container icon-container-info" style="width: 48px; height: 48px;">
+          <svg style="width: 24px; height: 24px; color: white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Phụ lục</div>
+          <div style="font-size: var(--text-sm); color: var(--info-600); font-weight: var(--font-semibold);">Tổng giá trị</div>
+        </div>
+      </div>
+      <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--info-700); margin-bottom: var(--space-2);" data-copy="{{ '{:,}'.format(stats.annexes_total_value).replace(',', '.') }}">
+        {{ "{:,}".format(stats.annexes_total_value).replace(",", ".") }}
+      </div>
+      <div style="font-size: var(--text-sm); color: var(--text-secondary);">đồng</div>
+    </div>
+  </div>
+</div>
+
+<!-- Top Channels với màu sắc phong phú -->
+<div class="card" style="border-left: 4px solid var(--pink-500);">
+  <div class="card-header" style="background: linear-gradient(135deg, white 0%, var(--pink-50) 100%);">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 class="card-title" style="color: var(--pink-800); display: flex; align-items: center; gap: var(--space-3); margin: 0;">
+        <svg style="width: 28px; height: 28px; color: var(--pink-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        Top kênh theo tổng giá trị
+      </h2>
+      <span class="badge badge-pink">{{ year }}</span>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="table-wrapper" style="overflow-x:auto;">
+      <table class="table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th style="width: 60px;">Xếp hạng</th>
+            <th>Kênh</th>
+            <th style="text-align: right;">Tổng giá trị</th>
+            <th style="width: 200px;">Biểu đồ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in top_channels %}
+          <tr>
+            <td style="text-align: center;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--pink-500), var(--pink-700)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto;">
+                {{ loop.index }}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-primary);" data-copy="{{ r.kenh }}">{{ r.kenh }}</div>
+            </td>
+            <td style="text-align: right;">
+              <span style="font-weight: 700; color: var(--secondary-700);" data-copy="{{ '{:,}'.format(r.total_value).replace(',', '.') }}">
+                {{ "{:,}".format(r.total_value).replace(",", ".") }}
+              </span>
+              <span style="font-size: var(--text-xs); color: var(--text-tertiary);"> VNĐ</span>
+            </td>
+            <td>
+              <div style="width: 100%; background: var(--neutral-200); height: 8px; border-radius: var(--radius-full); overflow: hidden;">
+                <div style="height: 100%; background: linear-gradient(90deg, var(--pink-400), var(--pink-600)); width: {{ (r.total_value / top_channels[0].total_value * 100)|int }}%; border-radius: var(--radius-full); transition: width 1s ease-out;"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center;">
+      <a class="btn btn-primary" href="/contracts?year={{ year }}">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Xem hợp đồng
+      </a>
+      <a class="btn btn-success" href="/annexes?year={{ year }}">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Xem phụ lục
+      </a>
+      <a class="btn btn-info" href="/reports?source=contracts&group_by=month&start={{ year }}-01-01&end={{ year }}-12-31">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+        Xem báo cáo
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Number counter animation
+document.querySelectorAll('[data-counter]').forEach(el => {
+  const target = parseInt(el.getAttribute('data-counter'));
+  let current = 0;
+  const increment = target / 50;
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= target) {
+      el.textContent = target.toLocaleString();
+      clearInterval(timer);
+    } else {
+      el.textContent = Math.floor(current).toLocaleString();
+    }
+  }, 20);
+});
+</script>
+{% endblock %}

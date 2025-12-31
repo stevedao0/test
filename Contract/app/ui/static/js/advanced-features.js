@@ -77,7 +77,12 @@ function initDragDropUpload() {
   const fileInputs = document.querySelectorAll('input[type="file"]');
 
   fileInputs.forEach(input => {
+    if (input.hasAttribute('data-no-dragdrop')) return;
+    if (input.closest('[data-no-dragdrop]')) return;
+
     const wrapper = input.closest('.form-group') || input.parentElement;
+    if (!wrapper) return;
+    if (wrapper.querySelector('.drag-drop-zone')) return;
 
     const dropZone = document.createElement('div');
     dropZone.className = 'drag-drop-zone';
