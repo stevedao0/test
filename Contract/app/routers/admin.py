@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from starlette import status
 
-from app.auth import require_role
+from app.auth import require_permission
 from app.config import STORAGE_DIR
 from app.db_models import UserRow
 from app.utils import get_breadcrumbs
@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/admin/ops", response_class=HTMLResponse)
-def admin_ops(request: Request, user: UserRow = Depends(require_role("admin"))):
+def admin_ops(request: Request, user: UserRow = Depends(require_permission("admin.ops.view"))):
     templates = request.app.state.templates
 
     logs_dir = STORAGE_DIR / "logs"
@@ -46,7 +46,7 @@ def admin_ops(request: Request, user: UserRow = Depends(require_role("admin"))):
 
 
 @router.get("/admin/ops/download/{kind}/{path:path}")
-def admin_ops_download(kind: str, path: str, user: UserRow = Depends(require_role("admin"))):
+def admin_ops_download(kind: str, path: str, user: UserRow = Depends(require_permission("admin.ops.view"))):
     base = STORAGE_DIR / ("logs" if kind == "logs" else "backups")
     target = (base / path).resolve()
     base_resolved = base.resolve()

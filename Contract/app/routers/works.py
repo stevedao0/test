@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from openpyxl import load_workbook
 
-from app.auth import require_role
+from app.auth import require_permission
 from app.config import STORAGE_DIR, STORAGE_EXCEL_DIR
 from app.db import session_scope
 from app.db_models import UserRow, WorkRow
@@ -19,8 +19,53 @@ from app.utils import extract_channel_id, get_breadcrumbs
 router = APIRouter()
 
 
+@router.get("/works", response_class=HTMLResponse)
+def works_list(
+    request: Request,
+    year: int | None = None,
+    contract_no: str | None = None,
+    annex_no: str | None = None,
+    error: str | None = None,
+    message: str | None = None,
+    user: UserRow = Depends(require_permission("works.read")),
+):
+    templates = request.app.state.templates
+
+    y = year or date.today().year
+    cno = (contract_no or "").strip()
+    ano = (annex_no or "").strip()
+
+    with session_scope() as db:
+        q = db.query(WorkRow).filter(WorkRow.year == y)
+        if cno:
+            q = q.filter(WorkRow.contract_no == cno)
+        if ano:
+            q = q.filter(WorkRow.annex_no == ano)
+        rows = q.order_by(WorkRow.contract_no.asc(), WorkRow.annex_no.asc(), WorkRow.stt.asc()).all()
+
+    return templates.TemplateResponse(
+        "works_list.html",
+        {
+            "request": request,
+            "title": "Danh sách tác phẩm",
+            "year": y,
+            "contract_no": cno,
+            "annex_no": ano,
+            "rows": rows,
+            "error": error,
+            "message": message,
+            "breadcrumbs": get_breadcrumbs(request.url.path),
+        },
+    )
+
+
 @router.get("/works/import", response_class=HTMLResponse)
-def works_import_form(request: Request, error: str | None = None, message: str | None = None):
+def works_import_form(
+    request: Request,
+    error: str | None = None,
+    message: str | None = None,
+    user: UserRow = Depends(require_permission("works.import")),
+):
     templates = request.app.state.templates
     return templates.TemplateResponse(
         "works_import.html",
@@ -39,12 +84,13 @@ async def works_import_submit(
     request: Request,
     import_file: UploadFile = File(...),
     nguoi_thuc_hien: str = Form(""),
-    user: UserRow = Depends(require_role("admin", "mod")),
+    user: UserRow = Depends(require_permission("works.import")),
 ):
     backups_dir = STORAGE_DIR / "backups"
     logs_dir = STORAGE_DIR / "logs"
 
     try:
+        actor = (nguoi_thuc_hien or "").strip() or user.username
         data = await import_file.read()
         if data is None or len(data) == 0:
             raise ValueError("File import rỗng")
@@ -137,25 +183,25 @@ async def works_import_submit(
                 "annex_no": annex_no or "",
                 "ngay_ky_hop_dong": meta.get("ngay_ky_hop_dong", ""),
                 "ngay_ky_phu_luc": meta.get("ngay_ky_phu_luc", ""),
-                "nguoi_thuc_hien": (nguoi_thuc_hien or "").strip(),
+                "nguoi_thuc_hien": actor,
                 "ten_kenh": meta.get("ten_kenh", ""),
                 "id_channel": id_channel,
                 "link_kenh": meta.get("link_kenh", ""),
                 "stt": stt_int,
                 "id_link": id_link,
                 "youtube_url": youtube_url,
-                "id_work": id_work,
-                "musical_work": musical_work,
-                "author": author,
-                "composer": composer,
-                "lyricist": lyricist,
+                "id_work": str(id_work or ""),
+                "musical_work": str(musical_work or ""),
+                "author": str(author or ""),
+                "composer": str(composer or ""),
+                "lyricist": str(lyricist or ""),
                 "time_range": time_range,
                 "duration": duration,
                 "effective_date": effective_date,
                 "expiration_date": expiration_date,
-                "usage_type": usage_type,
-                "royalty_rate": royalty_rate,
-                "note": note,
+                "usage_type": str(usage_type or ""),
+                "royalty_rate": str(royalty_rate or ""),
+                "note": str(note or ""),
                 "imported_at": imported_at,
             }
             out_rows.append(rr)

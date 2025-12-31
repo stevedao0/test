@@ -80,9 +80,106 @@ def money_to_vietnamese_words(v: int | None) -> str:
     if v is None:
         return ""
     try:
-        return f"{format_money_number(int(v))} đồng"
+        n = int(v)
     except Exception:
         return ""
+
+    if n == 0:
+        return "không đồng"
+
+    negative = n < 0
+    n = abs(n)
+
+    digits = [
+        "không",
+        "một",
+        "hai",
+        "ba",
+        "bốn",
+        "năm",
+        "sáu",
+        "bảy",
+        "tám",
+        "chín",
+    ]
+    scales = [
+        "",
+        "nghìn",
+        "triệu",
+        "tỷ",
+        "nghìn tỷ",
+        "triệu tỷ",
+        "tỷ tỷ",
+    ]
+
+    def read_two_digits(tens: int, ones: int, *, has_hundreds: bool) -> list[str]:
+        out: list[str] = []
+        if tens == 0:
+            if ones != 0:
+                if has_hundreds:
+                    out.append("lẻ")
+                if ones == 5 and has_hundreds:
+                    out.append("lăm")
+                else:
+                    out.append(digits[ones])
+            return out
+        if tens == 1:
+            out.append("mười")
+            if ones == 0:
+                return out
+            if ones == 5:
+                out.append("lăm")
+            else:
+                out.append(digits[ones])
+            return out
+
+        out.append(digits[tens])
+        out.append("mươi")
+        if ones == 0:
+            return out
+        if ones == 1:
+            out.append("mốt")
+        elif ones == 4:
+            out.append("tư")
+        elif ones == 5:
+            out.append("lăm")
+        else:
+            out.append(digits[ones])
+        return out
+
+    def read_three_digits(num: int, *, force_full: bool) -> list[str]:
+        h = num // 100
+        t = (num // 10) % 10
+        o = num % 10
+        out: list[str] = []
+
+        if h != 0 or force_full:
+            out.append(digits[h])
+            out.append("trăm")
+            out.extend(read_two_digits(t, o, has_hundreds=True))
+            return out
+
+        out.extend(read_two_digits(t, o, has_hundreds=False))
+        return out
+
+    parts: list[str] = []
+    group_index = 0
+    while n > 0 and group_index < len(scales):
+        group = n % 1000
+        n //= 1000
+        if group != 0:
+            force_full = n > 0
+            chunk = read_three_digits(group, force_full=force_full)
+            scale = scales[group_index]
+            if scale:
+                chunk.append(scale)
+            parts = chunk + parts
+        group_index += 1
+
+    s = " ".join([p for p in parts if p]).strip()
+    if negative:
+        s = f"âm {s}".strip()
+    return f"{s} đồng".strip()
 
 
 def get_breadcrumbs(path: str):

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom: var(--space-6);">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4); border-left: 4px solid var(--teal-500);">
+    <div>
+      <h1 class="card-title" style="color: var(--teal-800); display: flex; align-items: center; gap: var(--space-3);">
+        <svg style="width: 28px; height: 28px; color: var(--teal-600);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Danh sách tác phẩm
+      </h1>
+      <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+        🎵 Quản lý danh mục tác phẩm theo hợp đồng / phụ lục
+      </p>
+    </div>
+
+    <form style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap;" method="get" action="/works">
+      <div class="form-group" style="margin: 0;">
+        <input name="year" value="{{ year }}" class="form-input" placeholder="Năm" style="width: 120px; border: 2px solid var(--teal-300);" />
+      </div>
+      <div class="form-group" style="margin: 0;">
+        <input name="contract_no" value="{{ contract_no or '' }}" class="form-input" placeholder="Số HĐ" style="width: 220px; border: 2px solid var(--teal-200);" />
+      </div>
+      <div class="form-group" style="margin: 0;">
+        <input name="annex_no" value="{{ annex_no or '' }}" class="form-input" placeholder="Số PL" style="width: 140px; border: 2px solid var(--teal-200);" />
+      </div>
+      <button class="btn btn-info" type="submit">
+        <svg style="width: 16px; height: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        Lọc
+      </button>
+    </form>
+  </div>
+
+  <div class="card-body">
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: var(--space-4);">
+        <div class="alert-content"><div class="alert-message">{{ error }}</div></div>
+      </div>
+    {% endif %}
+    {% if message %}
+      <div class="alert alert-success" style="margin-bottom: var(--space-4);">
+        <div class="alert-content"><div class="alert-message">{{ message }}</div></div>
+      </div>
+    {% endif %}
+
+    <div class="card" style="border-left: 4px solid var(--info-500); margin-bottom: var(--space-4);">
+      <div class="card-body" style="padding: var(--space-4);">
+        <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; align-items: flex-end;">
+          <div class="form-group" style="margin: 0; min-width: 200px;">
+            <label class="form-label">Năm</label>
+            <input class="form-input" type="number" id="worksYear" value="{{ year }}" placeholder="2025" />
+          </div>
+
+          {% if has_permission(request, 'works.read') %}
+          <a class="btn btn-info" href="#" onclick="this.href='/storage/excel/works/download/' + (document.getElementById('worksYear').value || new Date().getFullYear());">
+            Tải tổng danh sách tác phẩm
+          </a>
+          {% endif %}
+
+          {% if has_permission(request, 'catalogue.upload') %}
+          <a class="btn btn-secondary" href="/templates/import/contract/xlsx">Tải mẫu import HĐ</a>
+          <a class="btn btn-secondary" href="/templates/import/annex/xlsx">Tải mẫu import PL</a>
+          {% endif %}
+        </div>
+
+        {% if has_permission(request, 'works.import') %}
+        <form method="post" action="/works/import" enctype="multipart/form-data" data-loading style="margin-top: var(--space-4);">
+          <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; align-items: flex-end;">
+            <div class="form-group" style="margin: 0; min-width: 320px;">
+              <label class="form-label">Upload file import</label>
+              <input class="form-input" type="file" name="import_file" accept=".xlsx" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Import</button>
+            <a class="btn btn-secondary" href="/works/import">Màn hình import</a>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="margin-bottom: var(--space-4); position: relative;">
+      <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--teal-500); pointer-events: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input type="text" placeholder="🔍 Tìm kiếm theo tên tác phẩm, code, tác giả, số HĐ..." class="form-input" data-table-search="works-table" style="max-width: 600px; padding-left: var(--space-10); border: 2px solid var(--teal-200); background: linear-gradient(135deg, white 0%, var(--teal-50) 100%);" />
+    </div>
+
+    <div class="table-wrapper data-table-container" data-enhanced-table="works-table">
+      <table class="table" data-sortable-table>
+        <thead>
+          <tr>
+            <th data-sort="number">STT</th>
+            <th data-sort="text">Số HĐ</th>
+            <th data-sort="text">Số PL</th>
+            <th data-sort="text">ID/Code</th>
+            <th data-sort="text">Tên tác phẩm</th>
+            <th data-sort="text">Tác giả</th>
+            <th data-sort="text">Video</th>
+            <th data-sort="text">Import lúc</th>
+          </tr>
+        </thead>
+        <tbody data-table-body>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.stt or '' }}</td>
+              <td><strong style="color: var(--primary-700);" data-copy="{{ r.contract_no }}">{{ r.contract_no }}</strong></td>
+              <td>{% if r.annex_no %}<span class="badge badge-teal" data-copy="{{ r.annex_no }}">PL {{ r.annex_no }}</span>{% else %}-{% endif %}</td>
+              <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: var(--text-sm);">{{ r.id_work or '' }}</td>
+              <td>{{ r.musical_work or '' }}</td>
+              <td>{{ r.author or '' }}</td>
+              <td>
+                {% if r.youtube_url %}
+                  <a href="{{ r.youtube_url }}" target="_blank" rel="noopener noreferrer">Link</a>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td style="color: var(--text-secondary); font-size: var(--text-sm);">{{ r.imported_at or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="card-header" style="border-left: 4px solid var(--primary-500);">
+    <h1 class="card-title">Báo cáo</h1>
+    <p style="color: var(--text-secondary); margin-top: var(--space-2);">Lọc theo ngày/tuần/tháng/năm. Admin/Mod xem toàn bộ, User chỉ xem dữ liệu của chính mình.</p>
+  </div>
+
+  <div class="card-body">
+    <form method="get" action="/reports" style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: end; margin-bottom: var(--space-6);">
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">Nguồn</label>
+        <select class="form-input" name="source">
+          <option value="contracts" {% if source == 'contracts' %}selected{% endif %}>Hợp đồng / Phụ lục</option>
+          <option value="works" {% if source == 'works' %}selected{% endif %}>Tác phẩm (Works)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">Nhóm theo</label>
+        <select class="form-input" name="group_by">
+          <option value="day" {% if group_by == 'day' %}selected{% endif %}>Ngày</option>
+          <option value="week" {% if group_by == 'week' %}selected{% endif %}>Tuần</option>
+          <option value="month" {% if group_by == 'month' %}selected{% endif %}>Tháng</option>
+          <option value="year" {% if group_by == 'year' %}selected{% endif %}>Năm</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">Từ ngày</label>
+        <input class="form-input" type="date" name="start" value="{{ start }}" />
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">Đến ngày</label>
+        <input class="form-input" type="date" name="end" value="{{ end }}" />
+      </div>
+
+      {% if is_admin_mod %}
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label">Theo user (tuỳ chọn)</label>
+        <select class="form-input" name="username">
+          <option value="">-- Tất cả --</option>
+          {% for u in user_choices %}
+            <option value="{{ u }}" {% if user_filter == u %}selected{% endif %}>{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="form-group" style="margin: 0;">
+        <button class="btn btn-primary" type="submit">Xem báo cáo</button>
+      </div>
+    </form>
+
+    {% if has_permission(request, 'reports.export') %}
+      <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-6);">
+        <a class="btn btn-secondary" href="/reports/export.xlsx?source={{ source }}&group_by={{ group_by }}&start={{ start }}&end={{ end }}{% if is_admin_mod and user_filter %}&username={{ user_filter }}{% endif %}">
+          Export Excel
+        </a>
+      </div>
+    {% endif %}
+
+    <div style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: var(--space-6);">
+      <div class="card" style="border-left: 4px solid var(--info-500);">
+        <div class="card-body">
+          <div style="color: var(--text-secondary);">Tổng bản ghi</div>
+          <div style="font-size: var(--text-3xl); font-weight: 700;">{{ stats.total }}</div>
+        </div>
+      </div>
+      {% if source == 'contracts' %}
+      <div class="card" style="border-left: 4px solid var(--secondary-500);">
+        <div class="card-body">
+          <div style="color: var(--text-secondary);">Tổng giá trị (VNĐ)</div>
+          <div style="font-size: var(--text-3xl); font-weight: 700;">{{ "{:,}".format(stats.total_value).replace(",", ".") }}</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="table-wrapper" style="overflow-x:auto;">
+      <table class="table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Kỳ</th>
+            {% if source == 'works' %}
+              <th>Số tác phẩm</th>
+            {% else %}
+              <th>Số hợp đồng/phụ lục</th>
+              <th>Tổng giá trị</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>{{ r.period }}</td>
+            {% if source == 'works' %}
+              <td>{{ r.works_count }}</td>
+            {% else %}
+              <td>{{ r.contracts_count }}</td>
+              <td>{{ "{:,}".format(r.total_value).replace(",", ".") }}</td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

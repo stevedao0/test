@@ -40,8 +40,16 @@ def _repair_template_placeholders(*, template_path: Path) -> Path:
             r"\1",
         ),
         (
-            re.compile(r"<\s*(\{\{[^{}]+\}\})\s*>"),
+            re.compile(r"<\s*(\{\{[^{}]+\}\})\s*>", re.IGNORECASE),
             r"\1",
+        ),
+        (
+            re.compile(r"&lt;\s*([a-zA-Z0-9_\-]+)\s*&gt;"),
+            r"{{\1}}",
+        ),
+        (
+            re.compile(r"<\s*([a-zA-Z0-9_\-]+)\s*>", re.IGNORECASE),
+            r"{{\1}}",
         ),
     ]
 

@@ -102,6 +102,55 @@
   </div>
 
   <div class="card-body">
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: var(--space-4);">
+        <div class="alert-content"><div class="alert-message">{{ error }}</div></div>
+      </div>
+    {% endif %}
+    {% if message %}
+      <div class="alert alert-success" style="margin-bottom: var(--space-4);">
+        <div class="alert-content"><div class="alert-message">{{ message }}</div></div>
+      </div>
+    {% endif %}
+
+    {% if has_permission(request, 'catalogue.upload') %}
+    <div class="card" style="border-left: 4px solid var(--info-500); margin-bottom: var(--space-4);">
+      <div class="card-body" style="padding: var(--space-4);">
+        <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+          <div>
+            <div style="font-weight: var(--font-semibold);">Upload danh mục Excel (gắn vào Phụ lục)</div>
+            <div style="font-size: var(--text-sm); color: var(--text-secondary);">Tải mẫu, điền dữ liệu, rồi upload để gắn file danh mục vào phụ lục.</div>
+          </div>
+          <div style="display:flex; gap: var(--space-2); flex-wrap: wrap;">
+            <a class="btn btn-secondary" href="/templates/import/contract/xlsx">Tải mẫu HĐ</a>
+            <a class="btn btn-secondary" href="/templates/import/annex/xlsx">Tải mẫu PL</a>
+          </div>
+        </div>
+
+        <form method="post" action="/catalogue/upload" enctype="multipart/form-data" data-loading>
+          <input type="hidden" name="year" value="{{ year }}" />
+          <input type="hidden" name="next" value="/annexes?year={{ year }}" />
+          <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; align-items: flex-end;">
+            <div class="form-group" style="margin: 0; min-width: 220px;">
+              <label class="form-label">Số hợp đồng</label>
+              <input class="form-input" type="text" name="contract_no" placeholder="VD: 01/2025/HĐ..." required />
+            </div>
+            <div class="form-group" style="margin: 0; min-width: 180px;">
+              <label class="form-label">Số phụ lục</label>
+              <input class="form-input" type="text" name="annex_no" placeholder="VD: 01" required />
+            </div>
+            <div class="form-group" style="margin: 0; min-width: 320px;">
+              <label class="form-label">File danh mục (.xlsx)</label>
+              <input class="form-input" type="file" name="catalogue_file" accept=".xlsx" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Upload</button>
+            <a class="btn btn-info" href="/works/import">Import tác phẩm</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
     <div style="margin-bottom: var(--space-4); position: relative;">
       <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--teal-500); pointer-events: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -217,7 +266,7 @@
                         <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        Tải xuống phụ lục
+                        Tải file
                       </a>
                       <div class="dropdown-divider"></div>
                     {% endif %}
@@ -229,18 +278,25 @@
                         Tải danh mục
                       </a>
                     {% endif %}
+
+                    {% if has_permission(request, 'catalogue.upload') %}
                     <a class="dropdown-item" href="/catalogue/upload?year={{ year }}&contract_no={{ r.contract_no|urlencode }}&annex_no={{ r.annex_no|urlencode }}">
                       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                       Upload danh mục
                     </a>
+
+                    {% endif %}
+
+                    {% if has_permission(request, 'annexes.delete') %}
                     <button class="dropdown-item dropdown-item-danger" onclick="deleteAnnex('{{ year }}', '{{ r.contract_no }}', '{{ r.annex_no }}')">
                       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                       Xóa phụ lục
                     </button>
+                    {% endif %}
                   </div>
                 </div>
               </td>
@@ -264,18 +320,22 @@
   </div>
 
   <div class="card-footer" style="display: flex; gap: var(--space-3); justify-content: space-between; background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--teal-50) 100%);">
+    {% if has_permission(request, 'annexes.create') %}
     <a href="/annexes/new" class="btn btn-primary">
       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       Tạo phụ lục mới
     </a>
+    {% endif %}
+    {% if has_permission(request, 'works.read') %}
     <a href="/storage/excel/works/download/{{ year }}" class="btn btn-info">
       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
       Tải file danh mục tác phẩm
     </a>
+    {% endif %}
   </div>
 </div>
 
@@ -556,12 +616,5 @@ document.addEventListener('click', function(e) {
     }, 100);
   }, true);
 })();
-
-// Initialize Enhanced Tables for search and pagination
-document.addEventListener('DOMContentLoaded', function() {
-  if (typeof initEnhancedTables === 'function') {
-    initEnhancedTables();
-  }
-});
 </script>
 {% endblock %}

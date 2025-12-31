@@ -3,12 +3,15 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, Response
 from starlette import status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import (
     STORAGE_DIR,
@@ -20,7 +23,7 @@ from app.config import (
 
 from app.db import DB_PATH, engine
 from app.db_models import Base, UserRow
-from app.auth import ensure_default_users, require_role
+from app.auth import ensure_default_users, get_current_user, get_permissions_for_user, require_role
 from app.db_ops import (
     _db_available,
     _rows_from_db,
@@ -33,9 +36,27 @@ from app.routers.works import router as works_router
 from app.routers.documents import router as documents_router
 from app.routers.contracts import router as contracts_router
 from app.routers.annexes import router as annexes_router
+from app.routers.users import router as users_router
+from app.routers.reports import router as reports_router
+from app.routers.search import router as search_router
+from app.routers.dashboard import router as dashboard_router
+from app.routers.auth_pages import router as auth_pages_router
+from app.routers.permissions import router as permissions_router
+from app.routers.templates import router as templates_router
 
 
 app = FastAPI()
+
+
+@app.exception_handler(HTTPException)
+async def _http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        accept = (request.headers.get("accept") or "").lower()
+        if "text/html" in accept and not request.url.path.startswith("/login"):
+            nxt = quote(str(request.url.path) + (f"?{request.url.query}" if request.url.query else ""), safe="/")
+            return RedirectResponse(url=f"/login?next={nxt}", status_code=303)
+        return JSONResponse({"success": False, "error": exc.detail or "Unauthorized"}, status_code=exc.status_code)
+    return JSONResponse({"success": False, "error": exc.detail}, status_code=exc.status_code)
 
 
 @app.on_event("startup")
@@ -116,76 +137,6 @@ def home() -> RedirectResponse:
     return RedirectResponse(url="/documents/new")
 
 
-@app.get("/contracts/new")
-def contract_form() -> RedirectResponse:
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.get("/annexes/new")
-def annex_form() -> RedirectResponse:
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.get("/api/contracts")
-def api_contracts_list(year: int | None = None, q: str | None = None):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.get("/contracts", response_class=HTMLResponse)
-def contracts_list(request: Request, response: Response, year: int | None = None, download: str | None = None, download2: str | None = None):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.get("/annexes", response_class=HTMLResponse)
-def annexes_list(request: Request, response: Response, year: int | None = None, download: str | None = None):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.post("/contracts")
-def create_contract(
-    request: Request,
-    ngay_lap_hop_dong: str = Form(...),
-    so_hop_dong_4: str = Form(...),
-    linh_vuc: str = Form("Sao chép trực tuyến"),
-    don_vi_ten: str = Form(""),
-    don_vi_dia_chi: str = Form(""),
-    don_vi_dien_thoai: str = Form(""),
-    don_vi_nguoi_dai_dien: str = Form(""),
-    don_vi_chuc_vu: str = Form("Giám đốc"),
-    don_vi_mst: str = Form(""),
-    don_vi_email: str = Form(""),
-    so_CCCD: str = Form(""),
-    ngay_cap_CCCD: str = Form(""),
-    nguoi_thuc_hien_email: str = Form(""),
-    kenh_ten: str = Form(""),
-    kenh_id: str = Form(""),
-    so_tien_chua_GTGT: str = Form(""),
-    thue_percent: str = Form(""),
-    user: UserRow = Depends(require_role("admin", "mod")),
-):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.post("/contracts/{year}/delete")
-def delete_contract(request: Request, year: int, contract_no: str, user: UserRow = Depends(require_role("admin", "mod"))):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.post("/annexes/{year}/delete")
-def delete_annex(request: Request, year: int, contract_no: str, annex_no: str, user: UserRow = Depends(require_role("admin", "mod"))):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.get("/admin/ops", response_class=HTMLResponse)
-def admin_ops(request: Request, user: UserRow = Depends(require_role("admin"))):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.get("/admin/ops/download/{kind}/{path:path}")
-def admin_ops_download(kind: str, path: str, user: UserRow = Depends(require_role("admin"))):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
 def _pick_existing_dir(primary: Path, fallback: Path) -> Path:
     try:
         if primary.exists():
@@ -217,93 +168,93 @@ def _pick_static_dir(primary: Path, fallback: Path) -> Path:
     return fallback
 
 
-_templates_dir = _pick_templates_dir(UI_TEMPLATES_DIR, WEB_TEMPLATES_DIR)
-_static_dir = _pick_static_dir(UI_STATIC_DIR, Path("app/static"))
+_mau_ui_dir = UI_TEMPLATES_DIR.parent / "Mau UI"
+_mau_templates_dir = _mau_ui_dir / "templates"
+_mau_static_dir = _mau_ui_dir / "static"
+
+_templates_dir = _pick_templates_dir(_mau_templates_dir, UI_TEMPLATES_DIR)
+_static_dir = _pick_static_dir(_mau_static_dir, UI_STATIC_DIR)
 
 app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 templates = Jinja2Templates(directory=str(_templates_dir))
 app.state.templates = templates
 
+
+def _template_has_permission(request: Request, permission: str) -> bool:
+    p = (permission or "").strip()
+    if not p:
+        return False
+    try:
+        cached = getattr(request.state, "_perms_cache", None)
+        if cached is None:
+            user = get_current_user(request)
+            cached = get_permissions_for_user(user=user)
+            request.state._perms_cache = cached
+        return p in cached
+    except Exception:
+        return False
+
+
+templates.env.globals["has_permission"] = _template_has_permission
+
+class RequireLoginMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+
+        public_prefixes = (
+            "/static",
+            "/login",
+            "/logout",
+        )
+        public_exact = {
+            "/favicon.ico",
+        }
+
+        if path in public_exact or any(path.startswith(p) for p in public_prefixes):
+            return await call_next(request)
+
+        username = (request.session.get("username") or "").strip()  # type: ignore[attr-defined]
+        if username:
+            return await call_next(request)
+
+        accept = (request.headers.get("accept") or "").lower()
+        wants_html = "text/html" in accept
+        is_xhr = (request.headers.get("x-requested-with") or "").lower() == "xmlhttprequest"
+        wants_json = ("application/json" in accept) or (not wants_html) or is_xhr
+
+        if wants_json:
+            return JSONResponse({"success": False, "error": "Unauthorized"}, status_code=status.HTTP_401_UNAUTHORIZED)
+
+        nxt = quote(str(request.url.path) + (f"?{request.url.query}" if request.url.query else ""), safe="/")
+        return RedirectResponse(url=f"/login?next={nxt}", status_code=303)
+
+# NOTE: Starlette runs middlewares in reverse order of addition (last added runs first).
+# We need SessionMiddleware to run BEFORE RequireLoginMiddleware so request.session is available.
+app.add_middleware(RequireLoginMiddleware)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=str(DB_PATH),
+    same_site="lax",
+)
+
 app.include_router(admin_router)
 app.include_router(storage_router)
+app.include_router(auth_pages_router)
+app.include_router(permissions_router)
+app.include_router(templates_router)
 app.include_router(catalogue_router)
 app.include_router(works_router)
 app.include_router(documents_router)
 app.include_router(contracts_router)
 app.include_router(annexes_router)
-
-
-@app.get("/works/import", response_class=HTMLResponse)
-def works_import_form(request: Request, error: str | None = None, message: str | None = None):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.post("/works/import")
-async def works_import_submit(
-    request: Request,
-    import_file: UploadFile = File(...),
-    nguoi_thuc_hien: str = Form(""),
-    user: UserRow = Depends(require_role("admin", "mod")),
-):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.post("/contracts/{year}/update")
-def update_contract(
-    request: Request,
-    year: int,
-    contract_no: str = Form(...),
-    ngay_lap_hop_dong: str = Form(...),
-    don_vi_ten: str = Form(""),
-    don_vi_dia_chi: str = Form(""),
-    don_vi_dien_thoai: str = Form(""),
-    don_vi_nguoi_dai_dien: str = Form(""),
-    don_vi_chuc_vu: str = Form(""),
-    don_vi_mst: str = Form(""),
-    don_vi_email: str = Form(""),
-    kenh_ten: str = Form(""),
-    kenh_id: str = Form(""),
-    so_tien_chua_GTGT: str = Form(""),
-    thue_percent: str = Form("10"),
-    user: UserRow = Depends(require_role("admin", "mod")),
-):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
-
-
-@app.post("/annexes")
-def create_annex(
-    request: Request,
-    contract_no: str = Form(...),
-    annex_no: str = Form(""),
-    ngay_ky_hop_dong: str = Form(""),
-    ngay_ky_phu_luc: str = Form(...),
-    linh_vuc: str = Form(""),
-    don_vi_ten: str = Form(""),
-    don_vi_dia_chi: str = Form(""),
-    don_vi_dien_thoai: str = Form(""),
-    don_vi_nguoi_dai_dien: str = Form(""),
-    don_vi_chuc_vu: str = Form(""),
-    don_vi_mst: str = Form(""),
-    don_vi_email: str = Form(""),
-    so_CCCD: str = Form(""),
-    ngay_cap_CCCD: str = Form(""),
-    kenh_ten: str = Form(""),
-    kenh_id: str = Form(""),
-    nguoi_thuc_hien_email: str = Form(""),
-    so_tien_chua_GTGT: str = Form(""),
-    thue_percent: str = Form("10"),
-):
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
+app.include_router(users_router)
+app.include_router(reports_router)
+app.include_router(search_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/documents/new", response_class=HTMLResponse)
-def document_form_unified(
-    request: Request,
-    doc_type: str | None = None,
-    year: int | None = None,
-    contract_no: str | None = None,
-    error: str | None = None,
-):
+def new_document_form(request: Request, error: str | None = None, message: str | None = None, doc_type: str | None = None):
     raise HTTPException(status_code=status.HTTP_410_GONE, detail="Moved")
 
 

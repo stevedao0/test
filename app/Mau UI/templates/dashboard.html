@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom: var(--space-6);">
+  <div class="card-header" style="border-left: 4px solid var(--primary-500);">
+    <h1 class="card-title">Dashboard {{ year }}</h1>
+    {% if owner %}
+      <p style="color: var(--text-secondary); margin-top: var(--space-2);">Chế độ user: chỉ hiển thị dữ liệu của <strong>{{ owner }}</strong></p>
+    {% else %}
+      <p style="color: var(--text-secondary); margin-top: var(--space-2);">Chế độ admin/mod: tổng quan toàn bộ dữ liệu</p>
+    {% endif %}
+  </div>
+
+  <div class="card-body">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-6);">
+      <div class="card" style="border-left: 4px solid var(--primary-500);">
+        <div class="card-body">
+          <div style="color: var(--text-secondary);">Hợp đồng</div>
+          <div style="font-size: var(--text-4xl); font-weight: 700;">{{ stats.contracts_count }}</div>
+        </div>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--teal-500);">
+        <div class="card-body">
+          <div style="color: var(--text-secondary);">Phụ lục</div>
+          <div style="font-size: var(--text-4xl); font-weight: 700;">{{ stats.annexes_count }}</div>
+        </div>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--info-500);">
+        <div class="card-body">
+          <div style="color: var(--text-secondary);">Tác phẩm (Works)</div>
+          <div style="font-size: var(--text-4xl); font-weight: 700;">{{ stats.works_count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-6); margin-top: var(--space-6);">
+      <div class="card" style="border-left: 4px solid var(--secondary-500);">
+        <div class="card-header"><h3 style="margin: 0;">Tổng giá trị hợp đồng (VNĐ)</h3></div>
+        <div class="card-body">
+          <div style="font-size: var(--text-3xl); font-weight: 700;">{{ "{:,}".format(stats.contracts_total_value).replace(",", ".") }}</div>
+        </div>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--purple-500);">
+        <div class="card-header"><h3 style="margin: 0;">Tổng giá trị phụ lục (VNĐ)</h3></div>
+        <div class="card-body">
+          <div style="font-size: var(--text-3xl); font-weight: 700;">{{ "{:,}".format(stats.annexes_total_value).replace(",", ".") }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="border-left: 4px solid var(--primary-500);">
+    <h2 class="card-title">Top kênh theo tổng giá trị (HĐ)</h2>
+  </div>
+  <div class="card-body">
+    <div class="table-wrapper" style="overflow-x:auto;">
+      <table class="table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Kênh</th>
+            <th>Tổng giá trị</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in top_channels %}
+          <tr>
+            <td>{{ r.kenh }}</td>
+            <td>{{ "{:,}".format(r.total_value).replace(",", ".") }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4);">
+      <a class="btn btn-secondary" href="/contracts?year={{ year }}">Xem hợp đồng</a>
+      <a class="btn btn-secondary" href="/annexes?year={{ year }}">Xem phụ lục</a>
+      <a class="btn btn-secondary" href="/reports?source=contracts&group_by=month&start={{ year }}-01-01&end={{ year }}-12-31">Xem báo cáo</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

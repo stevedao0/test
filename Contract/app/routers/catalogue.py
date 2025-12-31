@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from app.auth import require_role
+from app.auth import require_permission
 from app.config import STORAGE_DIR, STORAGE_EXCEL_DIR
 from app.db_models import UserRow
 from app.db_ops import _db_get_contract_row, _db_update_contract_fields
@@ -24,6 +24,7 @@ def catalogue_upload_form(
     annex_no: str | None = None,
     error: str | None = None,
     message: str | None = None,
+    user: UserRow = Depends(require_permission("catalogue.upload")),
 ):
     templates = request.app.state.templates
 
@@ -49,8 +50,9 @@ async def catalogue_upload_submit(
     year: int = Form(...),
     contract_no: str = Form(...),
     annex_no: str = Form(""),
+    next: str = Form(""),
     catalogue_file: UploadFile = File(...),
-    user: UserRow = Depends(require_role("admin", "mod")),
+    user: UserRow = Depends(require_permission("catalogue.upload")),
 ):
     backups_dir = STORAGE_DIR / "backups"
     logs_dir = STORAGE_DIR / "logs"
@@ -97,16 +99,14 @@ async def catalogue_upload_submit(
             },
         )
 
-        return RedirectResponse(
-            url=f"/catalogue/upload?year={year}&contract_no={contract_no}&annex_no={annex_no}&message=Đã upload danh mục và cập nhật dữ liệu",
-            status_code=303,
-        )
+        redirect_to = (next or "").strip() or f"/catalogue/upload?year={year}&contract_no={contract_no}&annex_no={annex_no}"
+        sep = "&" if "?" in redirect_to else "?"
+        return RedirectResponse(url=f"{redirect_to}{sep}message=Đã upload danh mục và cập nhật dữ liệu", status_code=303)
     except Exception as e:
         msg = f"{type(e).__name__}: {e}" if str(e) else f"{type(e).__name__}"
-        return RedirectResponse(
-            url=f"/catalogue/upload?year={year}&contract_no={contract_no}&annex_no={annex_no}&error={msg}",
-            status_code=303,
-        )
+        redirect_to = (next or "").strip() or f"/catalogue/upload?year={year}&contract_no={contract_no}&annex_no={annex_no}"
+        sep = "&" if "?" in redirect_to else "?"
+        return RedirectResponse(url=f"{redirect_to}{sep}error={msg}", status_code=303)
 
 
 def _year_from_contract_no(contract_no: str) -> int:

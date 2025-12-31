@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from app.auth import require_role
+from app.auth import require_permission
 from app.context import FIELD_CODE, FIELD_NAME, REGION_CODE
 from app.config import ANNEX_CATALOGUE_TEMPLATE_PATH, ANNEX_TEMPLATE_PATH, STORAGE_DIR, STORAGE_DOCX_DIR, STORAGE_EXCEL_DIR
 from app.db_models import UserRow
@@ -36,16 +36,29 @@ _LOGS_DIR = STORAGE_DIR / "logs"
 
 
 @router.get("/annexes/new")
-def annex_form() -> RedirectResponse:
-    return RedirectResponse(url="/documents/new?doc_type=annex")
+def annex_form(request: Request) -> RedirectResponse:
+    year = (request.query_params.get("year") or "").strip()
+    contract_no = (request.query_params.get("contract_no") or "").strip()
+
+    url = "/documents/new?doc_type=annex"
+    if year:
+        url += f"&year={year}"
+    if contract_no:
+        from urllib.parse import quote
+
+        url += f"&contract_no={quote(contract_no)}"
+    return RedirectResponse(url=url)
 
 
 @router.get("/annexes", response_class=HTMLResponse)
 def annexes_list(
     request: Request,
     response: Response,
-    year: int | None = None,
+    year: str | None = None,
     download: str | None = None,
+    error: str | None = None,
+    message: str | None = None,
+    user: UserRow = Depends(require_permission("annexes.read")),
 ):
     templates = request.app.state.templates
 
@@ -53,7 +66,14 @@ def annexes_list(
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
 
-    y = year or date.today().year
+    year_int: int | None = None
+    try:
+        yraw = (year or "").strip()
+        year_int = int(yraw) if yraw else None
+    except Exception:
+        year_int = None
+
+    y = year_int or date.today().year
     rows = _rows_from_db(year=y)
     annexes = [r for r in rows if r.get("annex_no")]
 
@@ -98,6 +118,8 @@ def annexes_list(
             "stats": stats,
             "download": download,
             "catalogue_filter": catalogue_filter,
+            "error": error,
+            "message": message,
             "breadcrumbs": get_breadcrumbs(request.url.path),
         },
     )
@@ -125,11 +147,13 @@ def create_annex(
     nguoi_thuc_hien_email: str = Form(""),
     so_tien_chua_GTGT: str = Form(""),
     thue_percent: str = Form("10"),
-    user: UserRow = Depends(require_role("admin", "mod")),
+    user: UserRow = Depends(require_permission("annexes.create")),
 ):
     templates = request.app.state.templates
 
     try:
+        actor_email = normalize_multi_emails(nguoi_thuc_hien_email) or user.username
+        nguoi_thuc_hien_email = actor_email
         so_phu_luc = annex_no.strip() or None
 
         parts = contract_no.split("/")
@@ -268,7 +292,7 @@ def create_annex(
             "ngay_cap_CCCD": ngay_cap_CCCD or "",
             "kenh_ten": kenh_ten_value,
             "kenh_id": channel_id_value,
-            "nguoi_thuc_hien_email": nguoi_thuc_hien_email or "",
+            "nguoi_thuc_hien_email": nguoi_thuc_hien_email,
             "so_tien_nhuan_but": total_number,
             "so_tien_chua_GTGT": pre_vat_number,
             "thue_GTGT": vat_number,
@@ -391,7 +415,7 @@ def delete_annex(
     year: int,
     contract_no: str,
     annex_no: str,
-    user: UserRow = Depends(require_role("admin", "mod")),
+    user: UserRow = Depends(require_permission("annexes.delete")),
 ):
     try:
         row = _db_get_contract_row(year=year, contract_no=contract_no, annex_no=annex_no)

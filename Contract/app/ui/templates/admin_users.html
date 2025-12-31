@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="card-header" style="border-left: 4px solid var(--primary-500);">
+    <h1 class="card-title">Quản lý tài khoản</h1>
+    <p style="color: var(--text-secondary); margin-top: var(--space-2);">Admin/mod là tài khoản hệ thống. User là email @vcpmc.org.</p>
+  </div>
+
+  <div class="card-body">
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: var(--space-4);">
+        <div class="alert-content">
+          <div class="alert-message">{{ error }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if message %}
+      <div class="alert alert-success" style="margin-bottom: var(--space-4);">
+        <div class="alert-content">
+          <div class="alert-message">{{ message }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="card" style="border-left: 4px solid var(--warning-500); margin-bottom: var(--space-6);">
+      <div class="card-header">
+        <h3 style="margin: 0;">Tài khoản của tôi</h3>
+      </div>
+      <div class="card-body" style="display:flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="color: var(--text-secondary);">
+          Đổi mật khẩu đăng nhập của chính bạn tại trang Đổi mật khẩu.
+        </div>
+        <a class="btn btn-warning" href="/account/password">Đổi mật khẩu của tôi</a>
+      </div>
+    </div>
+
+    <div style="display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-bottom: var(--space-6);">
+      <div class="card" style="border-left: 4px solid var(--secondary-500);">
+        <div class="card-header">
+          <h3 style="margin: 0;">Tạo user</h3>
+        </div>
+        <div class="card-body">
+          <form method="post" action="/admin/users" data-loading>
+            <div class="form-group">
+              <label class="form-label">Email @vcpmc.org</label>
+              <input class="form-input" name="username" placeholder="ten@vcpmc.org" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mật khẩu (để trống -> tự sinh)</label>
+              <input class="form-input" name="password" type="text" placeholder="Tối thiểu 6 ký tự" />
+            </div>
+            <button class="btn btn-success" type="submit">Tạo</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 4px solid var(--info-500);">
+        <div class="card-header">
+          <h3 style="margin: 0;">Reset mật khẩu user</h3>
+        </div>
+        <div class="card-body">
+          <form method="post" action="/admin/users/reset_password" data-loading>
+            <div class="form-group">
+              <label class="form-label">Email @vcpmc.org</label>
+              <input class="form-input" name="username" placeholder="ten@vcpmc.org" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mật khẩu mới (để trống -> tự sinh)</label>
+              <input class="form-input" name="new_password" type="text" placeholder="Tối thiểu 6 ký tự" />
+            </div>
+            <button class="btn btn-info" type="submit">Reset</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+
+    {% if has_permission(request, 'admin.system.manage') %}
+    <div class="card" style="border-left: 4px solid var(--error-500); margin-bottom: var(--space-6);">
+      <div class="card-header">
+        <h3 style="margin: 0;">Khôi phục tài khoản hệ thống (admin/mod)</h3>
+        <p style="color: var(--text-secondary); margin-top: var(--space-2);">
+          Chỉ dùng khi cần đặt lại mật khẩu cho tài khoản hệ thống. Việc đổi mật khẩu của chính bạn hãy dùng mục “Đổi mật khẩu của tôi”.
+        </p>
+      </div>
+      <div class="card-body">
+        <form method="post" action="/admin/system_accounts/password" data-loading>
+          <div class="form-group">
+            <label class="form-label">Tài khoản</label>
+            <select class="form-input" name="target_username" required>
+              <option value="admin">admin</option>
+              <option value="mod">mod</option>
+            </select>
+          </div>
+          <div style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+            <div class="form-group">
+              <label class="form-label">Mật khẩu mới</label>
+              <input class="form-input" name="new_password" type="password" minlength="6" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Xác nhận mật khẩu</label>
+              <input class="form-input" name="confirm_password" type="password" minlength="6" required />
+            </div>
+          </div>
+          <button class="btn btn-danger" type="submit">Đặt lại mật khẩu</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="table-wrapper" style="overflow-x: auto;">
+      <table class="table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.username }}</td>
+              <td>{{ r.role }}</td>
+              <td>{{ r.created_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

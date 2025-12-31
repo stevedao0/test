@@ -331,6 +331,13 @@ class EnhancedTable {
 }
 
 function initEnhancedTables() {
+  if (typeof window !== 'undefined') {
+    if (window.__enhancedTablesInitialized) {
+      return;
+    }
+    window.__enhancedTablesInitialized = true;
+  }
+
   const containers = document.querySelectorAll('.data-table-container');
   console.log(`📊 Initializing ${containers.length} enhanced tables`);
   containers.forEach(container => {

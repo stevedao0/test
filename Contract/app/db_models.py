@@ -122,3 +122,17 @@ class UserRow(Base):
     password_salt: Mapped[str] = mapped_column(String(64), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(128), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class UserPermissionRow(Base):
+    __tablename__ = "user_permissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(64), nullable=False)
+    permission: Mapped[str] = mapped_column(String(128), nullable=False)
+    allowed: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    __table_args__ = (
+        UniqueConstraint("username", "permission", name="uq_user_permission"),
+        Index("ix_user_permissions_username", "username"),
+    )

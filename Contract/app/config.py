@@ -5,13 +5,13 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
-DOCX_TEMPLATE_PATH = PROJECT_ROOT / "templates" / "HDQTGAN_PN_MR_template.docx"
+DOCX_TEMPLATE_PATH = PROJECT_ROOT / "templates" / "export_template_contract.docx"
 
-ANNEX_TEMPLATE_PATH = PROJECT_ROOT / "templates" / "HDQTGAN_PN_MR_annex_template.docx"
+ANNEX_TEMPLATE_PATH = PROJECT_ROOT / "templates" / "export_template_annex.docx"
 
-CATALOGUE_TEMPLATE_PATH = PROJECT_ROOT / "Mau danh muc" / "Nam_SHD_SCTT_Ten kenh_MR_danh muc.xlsx"
+CATALOGUE_TEMPLATE_PATH = PROJECT_ROOT / "templates" / "export_template_contract.xlsx"
 
-ANNEX_CATALOGUE_TEMPLATE_PATH = PROJECT_ROOT / "Mau danh muc" / "Nam_SHD_SPL_SCTT_Ten kenh_MR_danh muc.xlsx"
+ANNEX_CATALOGUE_TEMPLATE_PATH = PROJECT_ROOT / "templates" / "export_template_annex.xlsx"
 
 STORAGE_DIR = PROJECT_ROOT / "storage"
 STORAGE_DOCX_DIR = STORAGE_DIR / "docx"

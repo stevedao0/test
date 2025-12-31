@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div class="card-header" style="border-left: 4px solid var(--primary-500);">
+    <h1 class="card-title">Ma trận phân quyền</h1>
+    <p style="color: var(--text-secondary); margin-top: var(--space-2);">Chọn user và bật/tắt quyền bằng Allow/Deny. Nếu không set override thì quyền sẽ theo role mặc định.</p>
+  </div>
+
+  <div class="card-body">
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: var(--space-4);">
+        <div class="alert-content">
+          <div class="alert-message">{{ error }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if message %}
+      <div class="alert alert-success" style="margin-bottom: var(--space-4);">
+        <div class="alert-content">
+          <div class="alert-message">{{ message }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div style="display: grid; gap: var(--space-6); grid-template-columns: 360px 1fr;">
+      <div class="card" style="border-left: 4px solid var(--secondary-500);">
+        <div class="card-header">
+          <h3 style="margin: 0;">Chọn user</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">User</label>
+            <select class="form-input" id="permUserSelect" style="width: 100%;">
+              {% for u in users %}
+                <option value="{{ u.username }}">{{ u.username }} ({{ u.role }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="color: var(--text-secondary); font-size: var(--text-sm);">
+            Tip: admin có tất cả quyền theo role, nhưng vẫn có thể Deny bằng override.
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 4px solid var(--info-500);">
+        <div class="card-header">
+          <h3 style="margin: 0;">Cập nhật quyền</h3>
+        </div>
+        <div class="card-body">
+          <form method="post" action="/admin/permissions" data-loading>
+            <input type="hidden" name="target_username" id="targetUsername" value="" />
+
+            <script type="application/json" id="overridesData">{{ overrides | tojson }}</script>
+
+            <div style="display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+              {% for group, perms in permission_groups.items() %}
+                <div class="card" style="border: 1px solid var(--border-color);">
+                  <div class="card-header" style="padding: var(--space-4);">
+                    <strong>{{ group }}</strong>
+                  </div>
+                  <div class="card-body" style="padding: var(--space-4);">
+                    <div style="display:flex; flex-direction: column; gap: var(--space-3);">
+                      {% for p in perms %}
+                        <div style="display:flex; align-items: center; justify-content: space-between; gap: var(--space-3);">
+                          <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: var(--text-sm);">
+                            {{ p }}
+                          </div>
+                          <div style="display:flex; gap: var(--space-2); align-items:center;">
+                            <label style="display:flex; gap: 6px; align-items:center; font-size: var(--text-sm);">
+                              <input type="checkbox" name="perms_allow" value="{{ p }}" data-perm="{{ p }}" data-kind="allow" />
+                              Allow
+                            </label>
+                            <label style="display:flex; gap: 6px; align-items:center; font-size: var(--text-sm); color: var(--error-700);">
+                              <input type="checkbox" name="perms_deny" value="{{ p }}" data-perm="{{ p }}" data-kind="deny" />
+                              Deny
+                            </label>
+                          </div>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <div style="display:flex; gap: var(--space-3); margin-top: var(--space-6);">
+              <button class="btn btn-primary" type="submit">Lưu quyền</button>
+              <a class="btn btn-secondary" href="/admin/users">Quay lại quản lý user</a>
+            </div>
+          </form>
+
+          <script>
+            (function() {
+              const overridesEl = document.getElementById('overridesData');
+              let overrides = {};
+              try {
+                overrides = JSON.parse(overridesEl ? overridesEl.textContent : '{}') || {};
+              } catch (e) {
+                overrides = {};
+              }
+              const select = document.getElementById('permUserSelect');
+              const hidden = document.getElementById('targetUsername');
+
+              function applyForUser(username) {
+                hidden.value = username;
+
+                document.querySelectorAll('input[data-kind="allow"], input[data-kind="deny"]').forEach(cb => {
+                  cb.checked = false;
+                });
+
+                const userOverrides = overrides[username] || {};
+                Object.keys(userOverrides).forEach(p => {
+                  const val = userOverrides[p];
+                  if (val === 1) {
+                    const el = document.querySelector(`input[data-kind="allow"][data-perm="${CSS.escape(p)}"]`);
+                    if (el) el.checked = true;
+                  } else if (val === 0) {
+                    const el = document.querySelector(`input[data-kind="deny"][data-perm="${CSS.escape(p)}"]`);
+                    if (el) el.checked = true;
+                  }
+                });
+              }
+
+              select.addEventListener('change', () => applyForUser(select.value));
+
+              // enforce mutual exclusivity
+              document.addEventListener('change', (e) => {
+                const t = e.target;
+                if (!t || !t.matches('input[data-kind]')) return;
+                if (!t.checked) return;
+                const perm = t.getAttribute('data-perm');
+                const kind = t.getAttribute('data-kind');
+                const other = kind === 'allow' ? 'deny' : 'allow';
+                const otherEl = document.querySelector(`input[data-kind="${other}"][data-perm="${CSS.escape(perm)}"]`);
+                if (otherEl) otherEl.checked = false;
+              });
+
+              if (select && select.value) {
+                applyForUser(select.value);
+              }
+            })();
+          </script>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

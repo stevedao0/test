@@ -21,6 +21,21 @@ def _db_available() -> bool:
         return False
 
 
+def _pick_latest_contract_year(default_year: int) -> int:
+    if not _db_available():
+        return default_year
+
+    try:
+        with session_scope() as db:
+            row = db.query(ContractRecordRow.contract_year).order_by(ContractRecordRow.contract_year.desc()).first()
+            if row and row[0]:
+                return int(row[0])
+    except Exception:
+        return default_year
+
+    return default_year
+
+
 def _rows_from_db(*, year: int) -> list[dict]:
     if not _db_available():
         return []

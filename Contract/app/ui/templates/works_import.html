@@ -36,17 +36,36 @@
       </div>
     {% endif %}
 
+    <div style="display:flex; gap: var(--space-3); flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--space-4);">
+      <div class="form-group" style="margin: 0; min-width: 200px;">
+        <label class="form-label">Năm</label>
+        <input class="form-input" type="number" id="worksYear" value="{{ year or '' }}" placeholder="2025" />
+      </div>
+
+      {% if has_permission(request, 'works.read') %}
+      <a class="btn btn-info" href="#" onclick="this.href='/storage/excel/works/download/' + (document.getElementById('worksYear').value || new Date().getFullYear());">
+        Tải tổng danh sách tác phẩm
+      </a>
+      {% endif %}
+    </div>
+
     <form method="post" action="/works/import" enctype="multipart/form-data" data-loading>
       <div class="form-group">
         <label class="form-label">File Excel import</label>
         <input class="form-input" type="file" name="import_file" accept=".xlsx" required />
-        <div class="form-help" style="margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm);">
-          File cần theo mẫu: <strong>import_danh muc Hop dong.xlsx</strong> hoặc <strong>import_danh muc phu luc.xlsx</strong>.
-        </div>
+        {% if has_permission(request, 'catalogue.upload') %}
+          <div class="form-help" style="margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm);">
+            File cần theo mẫu:
+            <a href="/templates/import/contract/xlsx" class="btn btn-secondary" style="margin-left: var(--space-2); padding: 6px 10px;">Tải mẫu HĐ</a>
+            <a href="/templates/import/annex/xlsx" class="btn btn-secondary" style="margin-left: var(--space-2); padding: 6px 10px;">Tải mẫu PL</a>
+          </div>
+        {% endif %}
       </div>
 
       <div style="display:flex; gap: var(--space-3); flex-wrap: wrap;">
+        {% if has_permission(request, 'works.import') %}
         <button class="btn btn-primary" type="submit">Import</button>
+        {% endif %}
         <a class="btn btn-secondary" href="/contracts">Về danh sách hợp đồng</a>
       </div>
     </form>
